@@ -255,14 +255,6 @@ def cbo(data, target):
 
 # baseline approach
 
-def impact_baseline(extent, bb):
-    return (np.sum(extent) / bb.n) * (p(extent, bb) - bb.p0)
-
-
-def bnd_baseline(extent, bb):
-    target_col = bb.target[extent]
-    return (target_col.sum() / bb.n) * (1 - bb.p0)
-
 
 def root(data):
     return np.add.reduce(data, axis=0) == len(data)
@@ -287,9 +279,9 @@ def cbo_generate(target, s, r, extent, i, bb):
         _r[j] = True
         aug_extent = extent[bb.data[extent, j]]
 
-        bb.max_obj = max(impact_baseline(aug_extent, bb), bb.max_obj)
+        bb.max_obj = max(impact(aug_extent, bb), bb.max_obj)
 
-        if bnd_baseline(aug_extent, bb) < bb.max_obj:
+        if bnd(aug_extent, bb) < bb.max_obj:
             continue
 
         pp = True
