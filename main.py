@@ -182,7 +182,7 @@ def plus_lower(intent, extent, j, bb):
     intent[j][0] += 1
     extent = get_extent(intent, extent, bb)
 
-    if extent.any():
+    if extent.size > 0:
         bb.max_obj = max(impact(extent, bb), bb.max_obj)
         if bnd(extent, bb) >= bb.max_obj:
             # get closure, returns empty if not canonical
@@ -211,7 +211,7 @@ def minus_upper(intent, extent, j, bb):
     # lower upper bound of j
     intent[j][1] -= 1
     extent = get_extent(np.copy(intent), np.copy(extent), bb)
-    if extent.any():
+    if extent.size > 0:
         old_max_obj = bb.max_obj
         bb.max_obj = max(impact(extent, bb), old_max_obj)
         #if bb.max_obj > old_max_obj:
