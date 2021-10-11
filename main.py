@@ -6,27 +6,29 @@ from numba.core.types import Array
 
 RNG = np.random.default_rng(seed=0)
 
-
-def disc_num_to_bin(num_d):
+# convert discrete numerical dataset to binary
+def disc_num_to_bin(num_d_ref):
+    num_d = np.copy(num_d_ref)
     bin_d = []
     for att in range(len(num_d[0])):
         col = num_d[:, att]
         unique = np.unique(col)
-        for val in range(len(unique)):
-            new_col = col
+        for val in unique:
+            new_col = np.copy(col)
             new_col[col <= val] = 1
             new_col[col > val] = 0
             bin_d.append(new_col)
         for val in unique:
-            new_col = col
+            new_col = np.copy(col)
             new_col[col < val] = 0
             new_col[col >= val] = 1
             bin_d.append(new_col)
     bin_d = np.array(bin_d).T
     return bin_d
 
-
-def cont_num_to_bin(num_d):
+# convert continuous numerical dataset to binary dataset
+def cont_num_to_bin(num_d_ref):
+    num_d = np.copy(num_d_ref)
     bin_d = []
     for att in range(len(num_d[0])):
         col = num_d[:, att]
@@ -41,10 +43,10 @@ def cont_num_to_bin(num_d):
             new_col[col < val] = 0
             new_col[col >= val] = 1
             bin_d.append(new_col)
-    bin_d = np.array(bin_d, dtype=int).T
+    bin_d = np.array(bin_d).T
     return bin_d
 
-
+# create random discrete numerical array
 def rand_disc_num_array(rows, cols, alpha_=0.5):
     target_col = np.zeros((rows, 1))
     end_of_1s = int(len(target_col) * alpha_)
@@ -54,7 +56,7 @@ def rand_disc_num_array(rows, cols, alpha_=0.5):
     data_cols = np.random.randint(1, 10, (rows, cols))
     return data_cols, target_col
 
-
+# create random continuous numerical array
 def rand_cont_num_array(rows, cols, alpha_=0.5):
     target_col = np.zeros((cols, 1))
     end_of_1s = int(len(target_col) * alpha_)
@@ -191,11 +193,11 @@ def plus_lower(intent, extent, j, bb):
 
             if is_canonical(intent, new_intent, j):
                 intent = new_intent
-                print("intent")
-                print(intent)
-                print("max obj")
-                print(bb.max_obj)
-                print("\n\n")
+                # print("intent")
+                # print(intent)
+                # print("max obj")
+                # print(bb.max_obj)
+                # print("\n\n")
                 bb.num_patterns += 1
                 # print(intent)
                 # check if bounds can be further changed on j
@@ -222,11 +224,13 @@ def minus_upper(intent, extent, j, bb):
 
             if is_canonical(intent, new_intent, j):
                 intent = new_intent
+                """
                 print("intent")
                 print(intent)
                 print("max obj")
                 print(bb.max_obj)
                 print("\n\n")
+                """
                 bb.num_patterns += 1
                 # check if bounds can be further changed on j
                 if intent[j][0] != intent[j][1]:
@@ -259,11 +263,11 @@ def cbo(data, target):
     # print(bb)
     # intent = get_root(dims)
     intent = get_closure(extent, bb)
-    print("intent")
-    print(intent)
-    print("max obj")
-    print(bb.max_obj)
-    print("\n\n")
+    # print("intent")
+    # print(intent)
+    # print("max obj")
+    # print(bb.max_obj)
+    # print("\n\n")
     extent = get_extent(np.copy(intent), np.copy(extent), bb)
     bb.max_obj = max(impact(extent, bb), bb.max_obj)
     if bnd(extent, bb) <= bb.max_obj:
@@ -310,7 +314,6 @@ def cbo_generate(target, s, r, extent, i, bb):
         _r = r.copy()
         _r[j] = True
         aug_extent = extent[bb.data[extent, j]]
-
         bb.max_obj = max(impact(aug_extent, bb), bb.max_obj)
 
         if bnd(aug_extent, bb) < bb.max_obj:
@@ -363,7 +366,7 @@ if __name__ == '__main__':
 
     m = 2
     n = 2
-
+    """
     result = cbo_baseline(bin_data[m, n], targets[m, n])
     print("target")
     print(targets[m,n])
@@ -378,10 +381,29 @@ if __name__ == '__main__':
     print(num_data[m, n])
     print("max obj")
     print(result.max_obj)
-
+    """
     """
     data = np.array([[7,7],[9,4]])
     target = np.array([1,0])
     result = cbo(data,target)
     print(result.num_patterns)
     """
+    num_d = np.array([[1,1],[1,2]])
+    print("numd", num_d)
+    bin_d = disc_num_to_bin(num_d)
+    print("numd", num_d)
+    target = np.array([1,0])
+    result = cbo_baseline(bin_d, target)
+    print("target")
+    print(targets[m,n])
+    print("\n")
+    print(f"data_bin")
+    print(bin_d)
+    print("max obj")
+    print(result.max_obj)
+
+    result = cbo(num_d, target)
+    print(f"data_num")
+    print(num_d)
+    print("max obj")
+    print(result.max_obj)
