@@ -74,8 +74,9 @@ class BB:
     n: int64
     data: Array
     target: Array
+    best_query: Array
 
-    def __init__(self, num_nodes, num_candidates, num_patterns, max_obj, p0, n_data, data, target):
+    def __init__(self, num_nodes, num_candidates, num_patterns, max_obj, p0, n_data, data, target, best_query):
         self.num_nodes = num_nodes
         self.num_candidates = num_candidates
         self.num_patterns = num_patterns
@@ -84,17 +85,18 @@ class BB:
         self.n = n_data
         self.data = data
         self.target = target
+        self.best_query = best_query
 
     def __repr__(self):
         return f'{self.num_patterns} patterns\n{self.num_nodes} nodes\n{self.num_candidates} candidates'
 
-
+"""
 def get_root(d):
     rt = np.empty((d, 2))
     for i in range(d):
         rt[i] = np.array([0, 9])
     return rt
-
+"""
 
 def p(extent, bb):
     target_col = bb.target[extent]
@@ -189,6 +191,11 @@ def plus_lower(intent, extent, j, bb):
 
             if is_canonical(intent, new_intent, j):
                 intent = new_intent
+                print("intent")
+                print(intent)
+                print("max obj")
+                print(bb.max_obj)
+                print("\n\n")
                 bb.num_patterns += 1
                 # print(intent)
                 # check if bounds can be further changed on j
@@ -205,13 +212,21 @@ def minus_upper(intent, extent, j, bb):
     intent[j][1] -= 1
     extent = get_extent(np.copy(intent), np.copy(extent), bb)
     if extent.any():
-        bb.max_obj = max(impact(extent, bb), bb.max_obj)
+        old_max_obj = bb.max_obj
+        bb.max_obj = max(impact(extent, bb), old_max_obj)
+        #if bb.max_obj > old_max_obj:
+        #    best_query = intent
         if bnd(extent, bb) >= bb.max_obj:
             # get closure, returns empty if not canonical
             new_intent = get_closure(extent, bb)
 
             if is_canonical(intent, new_intent, j):
                 intent = new_intent
+                print("intent")
+                print(intent)
+                print("max obj")
+                print(bb.max_obj)
+                print("\n\n")
                 bb.num_patterns += 1
                 # check if bounds can be further changed on j
                 if intent[j][0] != intent[j][1]:
@@ -222,20 +237,33 @@ def minus_upper(intent, extent, j, bb):
 
 
 def previous_js(intent, extent, j, bb):
+    if intent[j][0] != intent[j][1]:
+        minus_upper(np.copy(intent), np.copy(extent), j, bb)
+        plus_lower(np.copy(intent), np.copy(extent), j, bb)
+    if j > 0:
+        previous_js(np.copy(intent), np.copy(extent), j - 1, bb)
+
+
+def search(intent, extent, j, bb):
     minus_upper(np.copy(intent), np.copy(extent), j, bb)
     plus_lower(np.copy(intent), np.copy(extent), j, bb)
-    if j:
-        previous_js(np.copy(intent), np.copy(extent), j - 1, bb)
+    if j > 0:
+        search(np.copy(intent), np.copy(extent), j - 1, bb)
 
 
 def cbo(data, target):
     extent = np.arange(len(data))
-    bb = BB(0, 0, 0, np.NINF, 0, len(data), data, target)
+    bb = BB(0, 0, 0, np.NINF, 0, len(data), data, target, None)
     bb.p0 = p(extent, bb)
     dims = len(data[0])
     # print(bb)
     # intent = get_root(dims)
-    intent = get_closure(extent)
+    intent = get_closure(extent, bb)
+    print("intent")
+    print(intent)
+    print("max obj")
+    print(bb.max_obj)
+    print("\n\n")
     extent = get_extent(np.copy(intent), np.copy(extent), bb)
     bb.max_obj = max(impact(extent, bb), bb.max_obj)
     if bnd(extent, bb) <= bb.max_obj:
@@ -246,11 +274,14 @@ def cbo(data, target):
     # print(intent)
 
     # get index of last attribute
-    last_j = dims - 1
 
-    minus_upper(np.copy(intent), np.copy(extent), last_j, bb)
-    plus_lower(np.copy(intent), np.copy(extent), last_j, bb)
-    previous_js(np.copy(intent), np.copy(extent), last_j - 1, bb)
+    # starts from last attribute (index dims-1) and decrements
+    j = dims-1
+
+    # search(np.copy(intent), np.copy(extent), j, bb)
+    minus_upper(np.copy(intent), np.copy(extent), j, bb)
+    plus_lower(np.copy(intent), np.copy(extent), j, bb)
+    previous_js(np.copy(intent), np.copy(extent), j-1, bb)
     return bb
 
 
@@ -295,7 +326,7 @@ def cbo_generate(target, s, r, extent, i, bb):
         if not pp:
             continue
 
-        for k in range(j + 1, n):
+        for k in range(j + 1, num):
             if len(aug_extent) <= s[k] and implied_on(k, aug_extent, bb):
                 _r[k] = True
 
@@ -306,7 +337,7 @@ def cbo_baseline(data, target):
     rt = root(data)
     extent = np.arange(len(data))
     ext_sizes = np.add.reduce(data)
-    bb = BB(0, 0, 0, np.NINF, 0, len(data), data, target)
+    bb = BB(0, 0, 0, np.NINF, 0, len(data), data, target, None)
     bb.p0 = p(extent, bb)
     cbo_generate(target, ext_sizes, rt, extent, 0, bb)
     return bb
@@ -314,6 +345,7 @@ def cbo_baseline(data, target):
 
 # driver code
 if __name__ == '__main__':
+    """
     no_of_attr = np.arange(2, 9, 2)
     # m = np.arange(20, 81, 20)
     no_of_data = np.arange(2, 13, 2)
@@ -342,3 +374,9 @@ if __name__ == '__main__':
     print(f"data_num[{m},{n}]")
     print(num_data[m, n])
     print(result.max_obj)
+    """
+
+    data = np.array([[1,3], [2,2], [3,1]])
+    target = np.array([1,1,0])
+    result = cbo(data,target)
+    print(result.num_patterns)
