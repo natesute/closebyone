@@ -234,13 +234,14 @@ def cbo(data, target):
     bb.p0 = p(extent, bb)
     dims = len(data[0])
     # print(bb)
-    intent = get_root(dims)
+    # intent = get_root(dims)
+    intent = get_closure(extent)
     extent = get_extent(np.copy(intent), np.copy(extent), bb)
     bb.max_obj = max(impact(extent, bb), bb.max_obj)
     if bnd(extent, bb) <= bb.max_obj:
         return bb
     # get closure, returns empty if not canonical
-    intent = get_closure(extent, bb)
+    # intent = get_closure(extent, bb)
     bb.num_patterns += 1
     # print(intent)
 
