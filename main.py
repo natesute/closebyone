@@ -345,7 +345,6 @@ def cbo_baseline(data, target):
 
 # driver code
 if __name__ == '__main__':
-    """
     no_of_attr = np.arange(2, 9, 2)
     # m = np.arange(20, 81, 20)
     no_of_data = np.arange(2, 13, 2)
@@ -371,15 +370,18 @@ if __name__ == '__main__':
     print("\n")
     print(f"data_bin[{m},{n}]")
     print(bin_data[m, n])
+    print("max obj")
     print(result.max_obj)
 
     result = cbo(num_data[m, n], targets[m, n])
     print(f"data_num[{m},{n}]")
     print(num_data[m, n])
+    print("max obj")
     print(result.max_obj)
+
     """
-    
     data = np.array([[7,7],[9,4]])
     target = np.array([1,0])
     result = cbo(data,target)
     print(result.num_patterns)
+    """
