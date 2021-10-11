@@ -366,6 +366,9 @@ if __name__ == '__main__':
     n = 2
 
     result = cbo_baseline(bin_data[m, n], targets[m, n])
+    print("target")
+    print(targets[m,n])
+    print("\n")
     print(f"data_bin[{m},{n}]")
     print(bin_data[m, n])
     print(result.max_obj)
@@ -375,8 +378,8 @@ if __name__ == '__main__':
     print(num_data[m, n])
     print(result.max_obj)
     """
-
-    data = np.array([[1,3], [2,2], [3,1]])
-    target = np.array([1,1,0])
+    
+    data = np.array([[7,7],[9,4]])
+    target = np.array([1,0])
     result = cbo(data,target)
     print(result.num_patterns)
