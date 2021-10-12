@@ -179,7 +179,7 @@ def is_canonical(intent, new_intent, current_j):
     return True
 
 
-def plus_lower(intent, extent, j, bb):
+def search_plus_lower(intent, extent, j, bb):
     # raise lower bound of j
     intent[j][0] += 1
     extent = get_extent(intent, extent, bb)
@@ -193,8 +193,8 @@ def plus_lower(intent, extent, j, bb):
 
             if is_canonical(intent, new_intent, j):
                 intent = new_intent
-                # print("intent")
-                # print(intent)
+                # print("extent")
+                # print(extent)
                 # print("max obj")
                 # print(bb.max_obj)
                 # print("\n\n")
@@ -203,13 +203,13 @@ def plus_lower(intent, extent, j, bb):
                 # check if bounds can be further changed on j
                 if intent[j][0] != intent[j][1]:
                     # branch current attribute, both bounds
-                    minus_upper(np.copy(intent), np.copy(extent), j, bb)
-                    plus_lower(np.copy(intent), np.copy(extent), j, bb)
+                    search_minus_upper(np.copy(intent), np.copy(extent), j, bb)
+                    search_plus_lower(np.copy(intent), np.copy(extent), j, bb)
                 if j:
-                    previous_js(np.copy(intent), np.copy(extent), j - 1, bb)
+                    search(np.copy(intent), np.copy(extent), j - 1, bb)
 
 
-def minus_upper(intent, extent, j, bb):
+def search_minus_upper(intent, extent, j, bb):
     # lower upper bound of j
     intent[j][1] -= 1
     extent = get_extent(np.copy(intent), np.copy(extent), bb)
@@ -224,34 +224,26 @@ def minus_upper(intent, extent, j, bb):
 
             if is_canonical(intent, new_intent, j):
                 intent = new_intent
-                """
-                print("intent")
-                print(intent)
-                print("max obj")
-                print(bb.max_obj)
-                print("\n\n")
-                """
+                # print("extent")
+                # print(extent)
+                # print("max obj")
+                # print(bb.max_obj)
+                # print("\n\n")
                 bb.num_patterns += 1
                 # check if bounds can be further changed on j
                 if intent[j][0] != intent[j][1]:
                     # branch current attribute, only upper bound
-                    minus_upper(np.copy(intent), np.copy(extent), j, bb)
-                if j == 1:  # because j==0 is value col
-                    previous_js(np.copy(intent), np.copy(extent), j - 1, bb)
+                    search_minus_upper(np.copy(intent), np.copy(extent), j, bb)
+                if j:  # because j==0 is value col
+                    search(np.copy(intent), np.copy(extent), j - 1, bb)
 
-
-def previous_js(intent, extent, j, bb):
-    if intent[j][0] != intent[j][1]:
-        minus_upper(np.copy(intent), np.copy(extent), j, bb)
-        plus_lower(np.copy(intent), np.copy(extent), j, bb)
-    if j > 0:
-        previous_js(np.copy(intent), np.copy(extent), j - 1, bb)
-
-
+# search changes on jth attribute downwards
 def search(intent, extent, j, bb):
-    minus_upper(np.copy(intent), np.copy(extent), j, bb)
-    plus_lower(np.copy(intent), np.copy(extent), j, bb)
+    if intent[j][0] != intent[j][1]:
+        search_minus_upper(np.copy(intent), np.copy(extent), j, bb)
+        search_plus_lower(np.copy(intent), np.copy(extent), j, bb)
     if j > 0:
+        # search changes on j-1th attribute downwards
         search(np.copy(intent), np.copy(extent), j - 1, bb)
 
 
@@ -263,13 +255,13 @@ def run_cbo(data, target):
     # print(bb)
     # intent = get_root(dims)
     intent = get_closure(extent, bb)
-    # print("intent")
-    # print(intent)
+    extent = get_extent(np.copy(intent), np.copy(extent), bb)
+    bb.max_obj = max(impact(extent, bb), bb.max_obj)
+    # print("extent")
+    # print(extent)
     # print("max obj")
     # print(bb.max_obj)
     # print("\n\n")
-    extent = get_extent(np.copy(intent), np.copy(extent), bb)
-    bb.max_obj = max(impact(extent, bb), bb.max_obj)
     if bnd(extent, bb) <= bb.max_obj:
         return bb
     # get closure, returns empty if not canonical
@@ -282,10 +274,8 @@ def run_cbo(data, target):
     # starts from last attribute (index dims-1) and decrements
     j = dims-1
 
-    # search(np.copy(intent), np.copy(extent), j, bb)
-    minus_upper(np.copy(intent), np.copy(extent), j, bb)
-    plus_lower(np.copy(intent), np.copy(extent), j, bb)
-    previous_js(np.copy(intent), np.copy(extent), j-1, bb)
+    search(np.copy(intent), np.copy(extent), j, bb)
+
     return bb
 
 
@@ -351,7 +341,7 @@ def run_baseline(data, target):
 
 # driver code
 if __name__ == '__main__':
-    
+    """
     no_of_attr = np.arange(2, 20, 2)
     # m = np.arange(20, 81, 20)
     no_of_data = np.arange(2, 20, 2)
@@ -368,8 +358,8 @@ if __name__ == '__main__':
             # convert and store binary data from num
             bin_data[m, n] = cont_num_to_bin(num_data[m, n]).copy()
 
-    m = 12
-    n = 16
+    m = 4
+    n = 4
     
     
     result = run_baseline(bin_data[m, n], targets[m, n])
@@ -386,31 +376,31 @@ if __name__ == '__main__':
     print(num_data[m, n])
     print("max obj")
     print(result.max_obj)
-    
+    """
     """
     data = np.array([[7,7],[9,4]])
     target = np.array([1,0])
     result = cbo(data,target)
     print(result.num_patterns)
     """
-    """
-    num_d = np.array([[1,1],[1,2]])
-    print("numd", num_d)
-    bin_d = disc_num_to_bin(num_d)
-    print("bind", bin_d)
-    target = np.array([1,0])
-    result = cbo_baseline(bin_d, target)
-    print("target")
-    print(target)
-    print("\n")
-    print(f"data_bin")
-    print(bin_d)
-    print("max obj")
-    print(result.max_obj)
+    
+    num_d = np.array([[1,3], [2,2], [3,1]])
+    # print("numd", num_d)
+    # bin_d = disc_num_to_bin(num_d)
+    # print("bind", bin_d)
+    target = np.array([1,1,0])
+    # result = run_baseline(bin_d, target)
+    # print("target")
+    # print(target)
+    # print("\n")
+    # print(f"data_bin")
+    # print(bin_d)
+    # print("max obj")
+    # print(result.max_obj)
 
-    result = cbo(num_d, target)
+    result = run_cbo(num_d, target)
     print(f"data_num")
     print(num_d)
     print("max obj")
     print(result.max_obj)
-    """
+    
