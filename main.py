@@ -15,15 +15,15 @@ def disc_num_to_bin(num_d_ref):
         unique = np.unique(col)
         for val in unique:
             new_col = np.copy(col)
-            new_col[col <= val] = 1
-            new_col[col > val] = 0
+            new_col[col <= val] = True
+            new_col[col > val] = False
             bin_d.append(new_col)
         for val in unique:
             new_col = np.copy(col)
-            new_col[col < val] = 0
-            new_col[col >= val] = 1
+            new_col[col < val] = False
+            new_col[col >= val] = True
             bin_d.append(new_col)
-    bin_d = np.array(bin_d).T
+    bin_d = np.array(bin_d, dtype=bool).T
     return bin_d
 
 # convert continuous numerical dataset to binary dataset
@@ -35,15 +35,15 @@ def cont_num_to_bin(num_d_ref):
         sorted_col = np.sort(col)
         for val in sorted_col:
             new_col = np.copy(col)
-            new_col[col <= val] = 1
-            new_col[col > val] = 0
+            new_col[col <= val] = True
+            new_col[col > val] = False
             bin_d.append(new_col)
         for val in sorted_col:
             new_col = np.copy(col)
-            new_col[col < val] = 0
-            new_col[col >= val] = 1
+            new_col[col < val] = False
+            new_col[col >= val] = True
             bin_d.append(new_col)
-    bin_d = np.array(bin_d).T
+    bin_d = np.array(bin_d, dtype=bool).T
     return bin_d
 
 # create random discrete numerical array
@@ -255,7 +255,7 @@ def search(intent, extent, j, bb):
         search(np.copy(intent), np.copy(extent), j - 1, bb)
 
 
-def cbo(data, target):
+def run_cbo(data, target):
     extent = np.arange(len(data))
     bb = BB(0, 0, 0, np.NINF, 0, len(data), data, target, None)
     bb.p0 = p(extent, bb)
@@ -303,17 +303,20 @@ def implied_on(j, ext, bb):
     return True
 
 
-def cbo_generate(target, s, r, extent, i, bb):
+def baseline(target, s, r, extent, i, bb):
     bb.num_nodes += 1
     num = len(r)
 
     for j in range(i, num):
+        aug_extent = extent[bb.data[extent, j]]
+        if aug_extent.size == 0:
+           continue
         if r[j]:
             continue
         bb.num_candidates += 1
         _r = r.copy()
         _r[j] = True
-        aug_extent = extent[bb.data[extent, j]]
+
         bb.max_obj = max(impact(aug_extent, bb), bb.max_obj)
 
         if bnd(aug_extent, bb) < bb.max_obj:
@@ -333,26 +336,27 @@ def cbo_generate(target, s, r, extent, i, bb):
             if len(aug_extent) <= s[k] and implied_on(k, aug_extent, bb):
                 _r[k] = True
 
-        cbo_generate(target, s, _r, aug_extent, j + 1, bb)
+        baseline(target, s, _r, aug_extent, j + 1, bb)
 
 
-def cbo_baseline(data, target):
+def run_baseline(data, target):
     rt = root(data)
     extent = np.arange(len(data))
     ext_sizes = np.add.reduce(data)
     bb = BB(0, 0, 0, np.NINF, 0, len(data), data, target, None)
     bb.p0 = p(extent, bb)
-    cbo_generate(target, ext_sizes, rt, extent, 0, bb)
+    baseline(target, ext_sizes, rt, extent, 0, bb)
     return bb
 
 
 # driver code
 if __name__ == '__main__':
-    no_of_attr = np.arange(2, 9, 2)
+    
+    no_of_attr = np.arange(2, 20, 2)
     # m = np.arange(20, 81, 20)
-    no_of_data = np.arange(2, 13, 2)
+    no_of_data = np.arange(2, 20, 2)
     # alpha = np.arange(0.25, 0.5, 0.75)
-    alpha = 0.5
+    alpha = 0.8
 
     num_data = {}
     bin_data = {}
@@ -364,10 +368,11 @@ if __name__ == '__main__':
             # convert and store binary data from num
             bin_data[m, n] = cont_num_to_bin(num_data[m, n]).copy()
 
-    m = 2
-    n = 2
-    """
-    result = cbo_baseline(bin_data[m, n], targets[m, n])
+    m = 12
+    n = 16
+    
+    
+    result = run_baseline(bin_data[m, n], targets[m, n])
     print("target")
     print(targets[m,n])
     print("\n")
@@ -376,26 +381,27 @@ if __name__ == '__main__':
     print("max obj")
     print(result.max_obj)
 
-    result = cbo(num_data[m, n], targets[m, n])
+    result = run_cbo(num_data[m, n], targets[m, n])
     print(f"data_num[{m},{n}]")
     print(num_data[m, n])
     print("max obj")
     print(result.max_obj)
-    """
+    
     """
     data = np.array([[7,7],[9,4]])
     target = np.array([1,0])
     result = cbo(data,target)
     print(result.num_patterns)
     """
+    """
     num_d = np.array([[1,1],[1,2]])
     print("numd", num_d)
     bin_d = disc_num_to_bin(num_d)
-    print("numd", num_d)
+    print("bind", bin_d)
     target = np.array([1,0])
     result = cbo_baseline(bin_d, target)
     print("target")
-    print(targets[m,n])
+    print(target)
     print("\n")
     print(f"data_bin")
     print(bin_d)
@@ -407,3 +413,4 @@ if __name__ == '__main__':
     print(num_d)
     print("max obj")
     print(result.max_obj)
+    """
