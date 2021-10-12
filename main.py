@@ -186,7 +186,7 @@ def search_plus_lower(intent, extent, j, bb):
 
     if extent.size > 0:
         bb.max_obj = max(impact(extent, bb), bb.max_obj)
-        if bnd(extent, bb) >= bb.max_obj:
+        if bnd(extent, bb) > bb.max_obj:
             # get closure, returns empty if not canonical
             new_intent = get_closure(extent, bb)
             # check if new intent is canonical
@@ -218,7 +218,7 @@ def search_minus_upper(intent, extent, j, bb):
         bb.max_obj = max(impact(extent, bb), old_max_obj)
         #if bb.max_obj > old_max_obj:
         #    best_query = intent
-        if bnd(extent, bb) >= bb.max_obj:
+        if bnd(extent, bb) > bb.max_obj:
             # get closure, returns empty if not canonical
             new_intent = get_closure(extent, bb)
 
