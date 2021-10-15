@@ -70,20 +70,20 @@ def rand_cont_num_array(rows, cols, alpha_=0.5):
 class BB:
     num_nodes: int64
     num_candidates: int64
-    num_patterns: int64
     max_obj: float64
     p0: float64
+    bnd0: float64
     n: int64
     data: Array
     target: Array
     best_query: Array
 
-    def __init__(self, num_nodes, num_candidates, num_patterns, max_obj, p0, n_data, data, target, best_query):
+    def __init__(self, num_nodes, num_candidates, max_obj, p0, bnd0, n_data, data, target, best_query):
         self.num_nodes = num_nodes
         self.num_candidates = num_candidates
-        self.num_patterns = num_patterns
         self.max_obj = max_obj
         self.p0 = p0
+        self.bnd0 = bnd0
         self.n = n_data
         self.data = data
         self.target = target
@@ -193,18 +193,24 @@ def search_plus_lower(intent, extent, j, bb):
 
             if is_canonical(intent, new_intent, j):
                 intent = new_intent
-                # print("extent")
-                # print(extent)
-                # print("max obj")
-                # print(bb.max_obj)
-                # print("\n\n")
-                bb.num_patterns += 1
+                print("intent")
+                print(intent)
+                print("max obj")
+                print(bb.max_obj)
+                print("\n\n")
+                bb.num_nodes += 1
                 # print(intent)
                 # check if bounds can be further changed on j
                 if intent[j][0] != intent[j][1]:
                     # branch current attribute, both bounds
                     search_minus_upper(np.copy(intent), np.copy(extent), j, bb)
+                    # check if maximum bound has been hit
+                    if bb.max_obj == bb.bnd0:
+                        return
                     search_plus_lower(np.copy(intent), np.copy(extent), j, bb)
+
+                    if bb.max_obj == bb.bnd0:
+                        return
                 if j:
                     search(np.copy(intent), np.copy(extent), j - 1, bb)
 
@@ -214,8 +220,7 @@ def search_minus_upper(intent, extent, j, bb):
     intent[j][1] -= 1
     extent = get_extent(np.copy(intent), np.copy(extent), bb)
     if extent.size > 0:
-        old_max_obj = bb.max_obj
-        bb.max_obj = max(impact(extent, bb), old_max_obj)
+        bb.max_obj = max(impact(extent, bb), bb.max_obj)
         #if bb.max_obj > old_max_obj:
         #    best_query = intent
         if bnd(extent, bb) > bb.max_obj:
@@ -224,24 +229,38 @@ def search_minus_upper(intent, extent, j, bb):
 
             if is_canonical(intent, new_intent, j):
                 intent = new_intent
-                # print("extent")
-                # print(extent)
-                # print("max obj")
-                # print(bb.max_obj)
-                # print("\n\n")
-                bb.num_patterns += 1
+                print("intent")
+                print(intent)
+                print("max obj")
+                print(bb.max_obj)
+                print("\n\n")
+                bb.num_nodes += 1
                 # check if bounds can be further changed on j
                 if intent[j][0] != intent[j][1]:
                     # branch current attribute, only upper bound
                     search_minus_upper(np.copy(intent), np.copy(extent), j, bb)
+                    # check if maximum bound has been hit
+                    if bb.max_obj == bb.bnd0:
+                        return
+
                 if j:  # because j==0 is value col
                     search(np.copy(intent), np.copy(extent), j - 1, bb)
 
 # search changes on jth attribute downwards
 def search(intent, extent, j, bb):
     if intent[j][0] != intent[j][1]:
+        # search aug children of minus-ing upper bound
         search_minus_upper(np.copy(intent), np.copy(extent), j, bb)
+        # check if maximum bound has been hit
+        if bb.max_obj == bb.bnd0:
+            return
+
+        # search aug children of plus-ing lower bound
         search_plus_lower(np.copy(intent), np.copy(extent), j, bb)
+        # check if maximum bound has been hit
+        if bb.max_obj == bb.bnd0:
+            return
+
     if j > 0:
         # search changes on j-1th attribute downwards
         search(np.copy(intent), np.copy(extent), j - 1, bb)
@@ -249,22 +268,25 @@ def search(intent, extent, j, bb):
 
 def run_cbo(data, target):
     extent = np.arange(len(data))
-    bb = BB(0, 0, 0, np.NINF, 0, len(data), data, target, None)
+    bb = BB(0, 0, np.NINF, 0, 0, len(data), data, target, None)
     bb.p0 = p(extent, bb)
+    bb.bnd0 = bnd(extent, bb)
     dims = len(data[0])
     # print(bb)
     # intent = get_root(dims)
     intent = get_closure(extent, bb)
     extent = get_extent(np.copy(intent), np.copy(extent), bb)
     bb.max_obj = max(impact(extent, bb), bb.max_obj)
-    # print("extent")
-    # print(extent)
-    # print("max obj")
-    # print(bb.max_obj)
-    # print("\n\n")
-    if bnd(extent, bb) <= bb.max_obj:
+    print("intent")
+    print(intent)
+    print("max obj")
+    print(bb.max_obj)
+    print("\n\n")
+
+    # check if inital objective value is maximum bound
+    if bb.max_obj == bb.bnd0:
         return bb
-    # get closure, returns empty if not canonical
+
     # intent = get_closure(extent, bb)
     bb.num_patterns += 1
     # print(intent)
@@ -333,7 +355,7 @@ def run_baseline(data, target):
     rt = root(data)
     extent = np.arange(len(data))
     ext_sizes = np.add.reduce(data)
-    bb = BB(0, 0, 0, np.NINF, 0, len(data), data, target, None)
+    bb = BB(0, 0, np.NINF, 0, len(data), data, target, None)
     bb.p0 = p(extent, bb)
     baseline(target, ext_sizes, rt, extent, 0, bb)
     return bb
@@ -385,7 +407,7 @@ if __name__ == '__main__':
     """
     
     num_d = np.array([[1,3], [2,2], [3,1]])
-    # print("numd", num_d)
+    print("numd", num_d)
     # bin_d = disc_num_to_bin(num_d)
     # print("bind", bin_d)
     target = np.array([1,1,0])
