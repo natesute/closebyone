@@ -180,25 +180,31 @@ def is_canonical(intent, new_intent, current_j):
 
 
 def search_plus_lower(intent, extent, j, bb):
+    print("plus lower\n")
     # raise lower bound of j
     intent[j][0] += 1
     extent = get_extent(intent, extent, bb)
 
     if extent.size > 0:
         bb.max_obj = max(impact(extent, bb), bb.max_obj)
-        if bnd(extent, bb) > bb.max_obj:
+        print("intent")
+        print(intent)
+        print("max obj")
+        print(bb.max_obj)
+        print("\n\n")
+        if bnd(extent, bb) >= bb.max_obj: # consider >. > would mean that, if peaking, peaked nodes would not be included at all.
+            print("bound accepted\n")
             # get closure, returns empty if not canonical
             new_intent = get_closure(extent, bb)
+            print("closure")
+            print(intent)
             # check if new intent is canonical
 
             if is_canonical(intent, new_intent, j):
+                print("is canonical\n")
                 intent = new_intent
-                print("intent")
-                print(intent)
-                print("max obj")
-                print(bb.max_obj)
-                print("\n\n")
                 bb.num_nodes += 1
+                
                 # print(intent)
                 # check if bounds can be further changed on j
                 if intent[j][0] != intent[j][1]:
@@ -216,24 +222,30 @@ def search_plus_lower(intent, extent, j, bb):
 
 
 def search_minus_upper(intent, extent, j, bb):
+    print("minus upper\n")
     # lower upper bound of j
     intent[j][1] -= 1
     extent = get_extent(np.copy(intent), np.copy(extent), bb)
     if extent.size > 0:
         bb.max_obj = max(impact(extent, bb), bb.max_obj)
+        print("intent")
+        print(intent)
+        print("max obj")
+        print(bb.max_obj)
+        print("\n\n")
         #if bb.max_obj > old_max_obj:
         #    best_query = intent
-        if bnd(extent, bb) > bb.max_obj:
+        if bnd(extent, bb) >= bb.max_obj:
+            print("bound accepted\n")
             # get closure, returns empty if not canonical
             new_intent = get_closure(extent, bb)
 
             if is_canonical(intent, new_intent, j):
+                print("is canonical\n")
                 intent = new_intent
-                print("intent")
+                print("closure")
                 print(intent)
-                print("max obj")
-                print(bb.max_obj)
-                print("\n\n")
+                
                 bb.num_nodes += 1
                 # check if bounds can be further changed on j
                 if intent[j][0] != intent[j][1]:
@@ -248,6 +260,7 @@ def search_minus_upper(intent, extent, j, bb):
 
 # search changes on jth attribute downwards
 def search(intent, extent, j, bb):
+    print("next attribute down\n")
     if intent[j][0] != intent[j][1]:
         # search aug children of minus-ing upper bound
         search_minus_upper(np.copy(intent), np.copy(extent), j, bb)
@@ -288,7 +301,7 @@ def run_cbo(data, target):
         return bb
 
     # intent = get_closure(extent, bb)
-    bb.num_patterns += 1
+    bb.num_nodes += 1
     # print(intent)
 
     # get index of last attribute
