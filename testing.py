@@ -58,8 +58,8 @@ def display_plots(ms, ns, alphas, time_cbo, time_bin, edges_cbo, edges_bin, node
     plt.plot(ms, res_cbo, marker='o', label='interval patterns')
     plt.plot(ms, res_bin, marker='s', label='binarised')
     plt.xlim(ms[0], ms[-1])
-    plt.xlabel('$no-of-data$')
     plt.ylabel('$time-(s)$')
+    plt.xlabel('$no-of-data$')
     plt.legend()
 
     res_cbo = [time_cbo[ms[-1], n, alphas[-1]] for n in ns]
@@ -91,8 +91,8 @@ def display_plots(ms, ns, alphas, time_cbo, time_bin, edges_cbo, edges_bin, node
     plt.plot(ms, res_cbo, marker='o')
     plt.plot(ms, res_bin, marker='s')
     plt.xlim(ms[0], ms[-1])
-    plt.xlabel('$no-of-data$')
     plt.ylabel('$no-of-edges$')
+    plt.xlabel('$no-of-data$')
 
     res_cbo = [edges_cbo[ms[-2], n, alphas[-1]] for n in ns]
     res_bin = [edges_bin[ms[-2], n, alphas[-1]] for n in ns]
@@ -124,8 +124,8 @@ def display_plots(ms, ns, alphas, time_cbo, time_bin, edges_cbo, edges_bin, node
     plt.plot(ms, res_cbo, marker='o')
     plt.plot(ms, res_bin, marker='s')
     plt.xlim(ms[0], ms[-1])
-    plt.xlabel('$no-of-data$')
     plt.ylabel('$no-of-nodes$')
+    plt.xlabel('$no-of-data$')
 
     res_cbo = [nodes_cbo[ms[-2], n, alphas[-1]] for n in ns]
     res_bin = [nodes_bin[ms[-2], n, alphas[-1]] for n in ns]
