@@ -57,100 +57,119 @@ def display_plots(ms, ns, alphas, time_cbo, time_bin, edges_cbo, edges_bin, node
     plt.subplot(3, 3, 1)
     plt.plot(ms, res_cbo, marker='o', label='interval patterns')
     plt.plot(ms, res_bin, marker='s', label='binarised')
-    plt.xlim(ms[0], ms[-1])
-    plt.ylabel('$time-(s)$')
-    plt.xlabel('$no-of-data$')
+    if len(ms) > 1:
+        plt.xlim(ms[0], ms[-1])
+    plt.ylabel('time (s)')
+    plt.xlabel('# data')
     plt.legend()
 
     res_cbo = [time_cbo[ms[-1], n, alphas[-1]] for n in ns]
     res_bin = [time_bin[ms[-1], n, alphas[-1]] for n in ns]
 
     plt.subplot(3, 3, 2)
-    plt.plot(ns, res_cbo, marker='o')
-    plt.plot(ns, res_bin, marker='s')
-    plt.xlim(ns[0], ns[-1])
-    plt.xlabel('$no-of-features$')
+    plt.plot(ns, res_cbo, marker='o', label='interval patterns')
+    plt.plot(ns, res_bin, marker='s', label='binarised')
+    if len(ns) > 1:
+        plt.xlim(ns[0], ns[-1])
+    plt.ylabel('time (s)')
+    plt.xlabel('# features')
+    plt.legend()
+    
+    res_cbo = [time_cbo[ms[-1], ns[-1], a] for a in alphas]
+    res_bin = [time_bin[ms[-1], ns[-1], a] for a in alphas]
 
-
+    plt.subplot(3, 3, 3)
+    plt.plot(alphas, res_cbo, marker='o', label='interval patterns')
+    plt.plot(alphas, res_bin, marker='s', label='binarised')
     if len(alphas) > 1:
-        res_cbo = [time_cbo[ms[-1], ns[-1], a] for a in alphas]
-        res_bin = [time_bin[ms[-1], ns[-1], a] for a in alphas]
-
-        plt.subplot(3, 3, 3)
-        plt.plot(alphas, res_cbo, marker='o')
-        plt.plot(alphas, res_bin, marker='s')
         plt.xlim(alphas[0], alphas[-1])
-        plt.xlabel('$support-percentage$')
+    plt.ylabel('time (s)')
+    plt.xlabel('% positive target')
+    plt.legend()
 
-    # displays edges
+    # display edges
 
     res_cbo = [edges_cbo[m, ns[-1], alphas[-1]] for m in ms]
     res_bin = [edges_bin[m, ns[-1], alphas[-1]] for m in ms]
 
     plt.subplot(3, 3, 4)
-    plt.plot(ms, res_cbo, marker='o')
-    plt.plot(ms, res_bin, marker='s')
-    plt.xlim(ms[0], ms[-1])
-    plt.ylabel('$no-of-edges$')
-    plt.xlabel('$no-of-data$')
+    plt.plot(ms, res_cbo, marker='o', label='interval patterns')
+    plt.plot(ms, res_bin, marker='s', label='binarised')
+    if len(ms) > 1:
+        plt.xlim(ms[0], ms[-1])
+    plt.ylabel('# edges')
+    plt.xlabel('# data')
+    plt.legend()
 
-    res_cbo = [edges_cbo[ms[-2], n, alphas[-1]] for n in ns]
-    res_bin = [edges_bin[ms[-2], n, alphas[-1]] for n in ns]
+    res_cbo = [edges_cbo[ms[-1], n, alphas[-1]] for n in ns]
+    res_bin = [edges_bin[ms[-1], n, alphas[-1]] for n in ns]
 
     plt.subplot(3, 3, 5)
-    plt.plot(ns, res_cbo, marker='o')
-    plt.plot(ns, res_bin, marker='s')
-    plt.xlim(ns[0], ns[-1])
-    plt.xlabel('$no-of-features$')
+    plt.plot(ns, res_cbo, marker='o', label='interval patterns')
+    plt.plot(ns, res_bin, marker='s', label='binarised')
+    if len(ns) > 1:
+        plt.xlim(ns[0], ns[-1])
+    plt.ylabel('# edges')
+    plt.xlabel('# features')
+    plt.legend()
     
 
+    res_cbo = [edges_cbo[ms[-1], ns[-1], a] for a in alphas]
+    res_bin = [edges_bin[ms[-1], ns[-1], a] for a in alphas]
 
+    plt.subplot(3, 3, 6)
+    plt.plot(alphas, res_cbo, marker='o', label='interval patterns')
+    plt.plot(alphas, res_bin, marker='s', label='binarised')
     if len(alphas) > 1:
-        res_cbo = [edges_cbo[ms[-1], ns[-1], a] for a in alphas]
-        res_bin = [edges_bin[ms[-1], ns[-1], a] for a in alphas]
-
-        plt.subplot(3, 3, 6)
-        plt.plot(alphas, res_cbo, marker='o')
-        plt.plot(alphas, res_bin, marker='s')
         plt.xlim(alphas[0], alphas[-1])
-        plt.xlabel('$support-percentage$')
+    plt.ylabel('# edges')
+    plt.xlabel('% positive target')
+    plt.legend()
 
-    # displays nodes
+    # display nodes
 
     res_cbo = [nodes_cbo[m, ns[-1], alphas[-1]] for m in ms]
     res_bin = [nodes_bin[m, ns[-1], alphas[-1]] for m in ms]
 
     plt.subplot(3, 3, 7)
-    plt.plot(ms, res_cbo, marker='o')
-    plt.plot(ms, res_bin, marker='s')
-    plt.xlim(ms[0], ms[-1])
-    plt.ylabel('$no-of-nodes$')
-    plt.xlabel('$no-of-data$')
+    plt.plot(ms, res_cbo, marker='o', label='interval patterns')
+    plt.plot(ms, res_bin, marker='s', label='binarised')
+    if len(ms) > 1:
+        plt.xlim(ms[0], ms[-1])
+    plt.ylabel('# nodes')
+    plt.xlabel('# data')
+    plt.legend()
 
-    res_cbo = [nodes_cbo[ms[-2], n, alphas[-1]] for n in ns]
-    res_bin = [nodes_bin[ms[-2], n, alphas[-1]] for n in ns]
+    res_cbo = [nodes_cbo[ms[-1], n, alphas[-1]] for n in ns]
+    res_bin = [nodes_bin[ms[-1], n, alphas[-1]] for n in ns]
 
     plt.subplot(3, 3, 8)
-    plt.plot(ns, res_cbo, marker='o')
-    plt.plot(ns, res_bin, marker='s')
-    plt.xlim(ns[0], ns[-1])
-    plt.xlabel('$no-of-features$')
+    plt.plot(ns, res_cbo, marker='o', label='interval patterns')
+    plt.plot(ns, res_bin, marker='s', label='binarised')
+    if len(ns) > 1:
+        plt.xlim(ns[0], ns[-1])
+    plt.ylabel('# nodes')
+    plt.xlabel('# features')
+    plt.legend()
 
+    # default static parameters to largest value
+    res_cbo = [nodes_cbo[ms[-1], ns[-1], a] for a in alphas]
+    res_bin = [nodes_bin[ms[-1], ns[-1], a] for a in alphas]
 
+    plt.subplot(3, 3, 9)
+    plt.plot(alphas, res_cbo, marker='o', label='interval patterns')
+    plt.plot(alphas, res_bin, marker='s', label='binarised')
     if len(alphas) > 1:
-        res_cbo = [nodes_cbo[ms[-1], ns[-1], a] for a in alphas]
-        res_bin = [nodes_bin[ms[-1], ns[-1], a] for a in alphas]
-
-        plt.subplot(3, 3, 9)
-        plt.plot(alphas, res_cbo, marker='o', label='interval patterns')
-        plt.plot(alphas, res_bin, marker='s', label='binarised')
         plt.xlim(alphas[0], alphas[-1])
-        plt.xlabel('$support-percentage$')
+    plt.ylabel('# nodes')
+    plt.xlabel('% positive target')
+    plt.legend()
+
     plt.show()
 
 if __name__ == '__main__':
-    ms = [3,4,5,6,7,8,9,10]
-    ns = [3,4,5,6,7,8,9,10]
-    alphas = [0.8]
+    ms = [5,6,7,8,9,10,11]
+    ns = [2,3,4,5,6]
+    alphas = [0.2,0.4,0.6,0.8]
     time_cbo, time_bin, edges_cbo, edges_bin, nodes_cbo, nodes_bin = get_results(ms, ns, alphas)
     display_plots(ms, ns, alphas, time_cbo, time_bin, edges_cbo, edges_bin, nodes_cbo, nodes_bin)

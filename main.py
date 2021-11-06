@@ -8,12 +8,12 @@ from numba.core.types import Array
 RNG = np.random.default_rng(seed=0)
 
 # convert discrete numerical dataset to binary
-def disc_num_to_bin(num_d_ref):
-    num_d = np.copy(num_d_ref)
-    bin_d = []
+def disc_num_to_bin(data_cbo_ref):
+    data_cbo = np.copy(data_cbo_ref)
+    data_bin = []
     # range through attributes (reversed)
-    for att in range(len(num_d[0])-1, -1, -1):
-        col = num_d[:, att]
+    for att in range(len(data_cbo[0])-1, -1, -1):
+        col = data_cbo[:, att]
         thresholds = np.unique(col)
         # range through ordered threshold values (reversed)
         for i in range(len(thresholds)-1, -1, -1):
@@ -21,37 +21,37 @@ def disc_num_to_bin(num_d_ref):
             # binarise column values according to proposition (<=)
             new_col[col <= thresholds[i]] = True
             new_col[col > thresholds[i]] = False
-            bin_d.append(new_col)
+            data_bin.append(new_col)
         # range through ordered threshold values
         for i in range(len(thresholds)):
             new_col = np.copy(col)
             # binarise column values according to proposition (>=)
             new_col[col >= thresholds[i]] = True
             new_col[col < thresholds[i]] = False
-            bin_d.append(new_col)
+            data_bin.append(new_col)
     # columns were appended to bin_d, so must be transposed to actually be columns
-    bin_d = np.array(bin_d, dtype=bool).T
-    return bin_d
+    data_bin = np.array(data_bin, dtype=bool).T
+    return data_bin
 
 # convert continuous numerical dataset to binary dataset
-def cont_num_to_bin(num_d_ref):
-    num_d = np.copy(num_d_ref)
-    bin_d = []
-    for att in range(0, len(num_d[0])-1, -1):
-        col = num_d[:, att]
+def cont_num_to_bin(data_cbo_ref):
+    data_cbo = np.copy(data_cbo_ref)
+    data_bin = []
+    for att in range(0, len(data_cbo[0])-1, -1):
+        col = data_cbo[:, att]
         thresholds = np.sort(col)
         for i in thresholds:
             new_col = np.copy(col)
             new_col[col <= thresholds[i]] = True
             new_col[col > thresholds[i]] = False
-            bin_d.append(new_col)
+            data_bin.append(new_col)
         for i in thresholds:
             new_col = np.copy(col)
             new_col[col >= thresholds[i]] = True
             new_col[col < thresholds[i]] = False
-            bin_d.append(new_col)
-    bin_d = np.array(bin_d, dtype=bool).T
-    return bin_d
+            data_bin.append(new_col)
+    data_bin = np.array(data_bin, dtype=bool).T
+    return data_bin
 
 # create random target column
 def rand_target_col(rows, alpha):
