@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from main import rand_target_col, rand_disc_num_array, disc_num_to_bin, run_baseline, run_cbo
+from recursive_cbo import rand_target_col, rand_disc_num_array, disc_num_to_bin, run_baseline, run_cbo
 
 def run_test(i, j, a):
     nodes_cbo = []
