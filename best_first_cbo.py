@@ -18,15 +18,15 @@ class Intent:
     def __getitem__(self, index):
         return self.pattern[index]
 
-    def minus_upper(self, j):
+    def get_minus_upper(self, j):
         new_pattern = np.copy(self.pattern)
         new_pattern[j][1] -= 1
-        return new_pattern
+        return Intent(new_pattern)
     
-    def plus_lower(self, j):
+    def get_plus_lower(self, j):
         new_pattern = np.copy(self.pattern)
         new_pattern[j][0] += 1
-        return new_pattern
+        return Intent(new_pattern)
     
     def fully_closed(self, j):
         return self.pattern[j][0] == self.pattern[j][1]
@@ -35,6 +35,10 @@ class Extent:
     def __init__(self, indices, data): # data = data in extent
         self.indices = indices
         self.data = data
+        self.m = len(data[0])
+
+    def __len__(self):
+        return len(self.indices)
 
     def get_closure(self):
         new_pattern = np.empty((self.m, 2))
@@ -48,6 +52,7 @@ class Extent:
 class Node:
     def __init__(self, extent, intent, obj, bnd, locked_attrs, active_attr):
         self.extent = extent
+        assert type(intent) == Intent, "node intent is not object"
         self.intent = intent
         self.obj = obj
         self.bnd = bnd
@@ -113,10 +118,9 @@ class CloseByOneBFS:
                     if not curr_node.intent.fully_closed(j):
                         new_locked_attrs = np.copy(curr_node.locked_attrs)
                         new_locked_attrs[j] = 1
-                        heappush(heap, Node(curr_node.extent, curr_node.intent.minus_upper(j), self.f(curr_node.extent), self.g(curr_node.extent), new_locked_attrs, j))
+                        heappush(heap, Node(curr_node.extent, curr_node.intent.get_minus_upper(j), self.f(curr_node.extent), self.g(curr_node.extent), new_locked_attrs, j))
 
                         if curr_node.locked_attrs[j]: # if j is a locked attribute
-                            heappush(heap, Node(curr_node.extent, curr_node.intent.plus_lower(j), self.f(curr_node.extent), self.g(curr_node.extent), curr_node.locked_attrs, j))
+                            heappush(heap, Node(curr_node.extent, curr_node.intent.get_plus_lower(j), self.f(curr_node.extent), self.g(curr_node.extent), curr_node.locked_attrs, j))
                     if j:
                         heappush(heap, Node(curr_node.extent, curr_node.intent, self.f(curr_node.extent), self.g(curr_node.extent), curr_node.locked_attrs, j-1))
-        print()

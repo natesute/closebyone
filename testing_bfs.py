@@ -25,14 +25,14 @@ if __name__ == "__main__":
     n = len(data)
     root_extent = Extent(np.arange(len(data)), data)
 
-    targ_perc_root = target[root_extent].mean()
+    targ_perc_root = target[root_extent.indices].mean()
 
-    obj = lambda ext : (len(ext) / n) * (target[ext].mean() - targ_perc_root) # impact
-    bnd = lambda ext : (target[ext].sum() / n) * (1 - targ_perc_root)
+    obj = lambda ext : (len(ext.indices) / n) * (target[ext.indices].mean() - targ_perc_root) # impact
+    bnd = lambda ext : (target[ext.indices].sum() / n) * (1 - targ_perc_root)
 
     target = rand_target_col(10, 0.5)
     data = rand_disc_num_array(10, 4)
     bfs = CloseByOneBFS(target, data, obj, bnd)
-    intent = bfs.closure_of(root_extent)
+    intent = root_extent.get_closure()
     root = Node(root_extent, intent, bfs.f(root_extent), bfs.g(root_extent), [0]*m, m-1)
     bfs.run(root)
