@@ -60,7 +60,7 @@ class Node:
         self.active_attr = active_attr
 
     def __repr__(self):
-        return str(self.intent)
+        return "Active_attr: " + str(self.active_attr) + "  " + str(self.intent)
 
     def __le__(self, other):
         return self.bnd <= other.bnd
