@@ -1,4 +1,4 @@
-from best_first_cbo import Intent, Node, CloseByOneBFS
+from best_first_cbo import Intent, Extent, Node, CloseByOneBFS
 import numpy as np
 
 RNG = np.random.default_rng(seed=0)
@@ -23,12 +23,11 @@ if __name__ == "__main__":
     target = np.array([1,0])
     m = len(data[0])
     n = len(data)
-    root_extent = np.arange(len(data))
+    root_extent = Extent(np.arange(len(data)), data)
 
     targ_perc_root = target[root_extent].mean()
 
     obj = lambda ext : (len(ext) / n) * (target[ext].mean() - targ_perc_root) # impact
-
     bnd = lambda ext : (target[ext].sum() / n) * (1 - targ_perc_root)
 
     target = rand_target_col(10, 0.5)

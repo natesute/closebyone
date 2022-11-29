@@ -30,6 +30,20 @@ class Intent:
     
     def fully_closed(self, j):
         return self.pattern[j][0] == self.pattern[j][1]
+    
+class Extent:
+    def __init__(self, indices, data): # data = data in extent
+        self.indices = indices
+        self.data = data
+
+    def get_closure(self):
+        new_pattern = np.empty((self.m, 2))
+
+        for j in range(self.m):
+            new_pattern[j][0] = np.min(self.data, axis=0)[j] # get min value in attribute, set as lower threshold
+            new_pattern[j][1] = np.max(self.data, axis=0)[j] # get max value in attribute, set as upper threshold
+
+        return Intent(new_pattern)
 
 class Node:
     def __init__(self, extent, intent, obj, bnd, locked_attrs, active_attr):
@@ -68,25 +82,6 @@ class CloseByOneBFS:
         self.m = len(data[0])
         self.n = len(data)
 
-    def get_mins(self, extent):
-        data_in_extent = self.data[extent]
-        return np.min(data_in_extent, axis=0)
-
-    def get_maxs(self, extent):
-        data_in_extent = self.data[extent]
-        return np.max(data_in_extent, axis=0)
-
-    def closure_of(self, extent):
-        new_pattern = np.empty((self.m, 2))
-        mins = self.get_mins(extent)
-        maxs = self.get_maxs(extent)
-
-        for j in range(self.m):
-            new_pattern[j][0] = mins[j]
-            new_pattern[j][1] = maxs[j]
-
-        return Intent(new_pattern)
-
     def is_canonical(self, curr_node, new_intent):
         intent = curr_node.intent
         j = curr_node.active_attr
@@ -106,12 +101,12 @@ class CloseByOneBFS:
         while heap: # while queue is not empty
             curr_node = heappop(heap)
             j = curr_node.active_attr
-            print(curr_node, end=" ")
+            print(curr_node, end="\n\n")
             max_obj = max(curr_node.obj, max_obj)
             if max_obj == max_bnd:
                 break
             if self.g(curr_node.extent) > max_obj:
-                closed_intent = self.closure_of(curr_node.extent)
+                closed_intent = curr_node.extent.get_closure()
                 if self.is_canonical(curr_node, closed_intent):
                     curr_node.intent = closed_intent
                     num_nodes += 1
@@ -120,7 +115,7 @@ class CloseByOneBFS:
                         new_locked_attrs[j] = 1
                         heappush(heap, Node(curr_node.extent, curr_node.intent.minus_upper(j), self.f(curr_node.extent), self.g(curr_node.extent), new_locked_attrs, j))
 
-                        if curr_node.locked_attrs[j] != 0:
+                        if curr_node.locked_attrs[j]: # if j is a locked attribute
                             heappush(heap, Node(curr_node.extent, curr_node.intent.plus_lower(j), self.f(curr_node.extent), self.g(curr_node.extent), curr_node.locked_attrs, j))
                     if j:
                         heappush(heap, Node(curr_node.extent, curr_node.intent, self.f(curr_node.extent), self.g(curr_node.extent), curr_node.locked_attrs, j-1))
