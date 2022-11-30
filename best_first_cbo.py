@@ -45,6 +45,9 @@ class Context:
         self.bnd = bnd
         self.target_mean = Utilities.target_mean(target)
         self.target_sum = Utilities.target_sum(target)
+        self.n = len(target)
+        self.m = len(objects[0])
+        self.root_indices = np.arange(self.n)
 
 
 class Intent:
@@ -79,10 +82,10 @@ class Intent:
 
 
 class Extent:
-    def __init__(self, indices, data): # data = data in extent
+    def __init__(self, indices, objects): # objects = objects in extent
         self.indices = indices
-        self.data = data
-        self.m = len(data[0])
+        self.objects = objects
+        self.m = len(objects[0])
 
     def __len__(self):
         return len(self.indices)
@@ -91,8 +94,8 @@ class Extent:
         new_pattern = np.empty((self.m, 2))
 
         for j in range(self.m):
-            new_pattern[j][0] = np.min(self.data, axis=0)[j] # get min value in attribute, set as lower threshold
-            new_pattern[j][1] = np.max(self.data, axis=0)[j] # get max value in attribute, set as upper threshold
+            new_pattern[j][0] = np.min(self.objects, axis=0)[j] # get min value in attribute, set as lower threshold
+            new_pattern[j][1] = np.max(self.objects, axis=0)[j] # get max value in attribute, set as upper threshold
 
         return Intent(new_pattern)
 
@@ -145,34 +148,53 @@ class BFS: # best first search
                 return False
         return True
 
+    def get_extent(self, intent):
+        new_indices = np.copy(self.context.root_indices)
+        for j in range(self.context.m):
+            low = intent[j][0]
+            high = intent[j][1]
+            mask = (self.context.objects[new_indices, j] >= low) & (self.context.objects[new_indices, j] <= high)
+            new_indices = new_indices[mask]
+        new_extent = Extent(new_indices, self.context.objects[new_indices])
+        return new_extent
+
     def push_children(self, j):
         if not self.curr_node.intent.fully_closed(j):
             new_locked_attrs = np.copy(self.curr_node.locked_attrs)
             new_locked_attrs[j] = 1
-            heappush(heap, Node(self.curr_node.extent, self.curr_node.intent.get_minus_upper(j), self.context.obj(self.curr_node.extent.indices), self.context.bnd(self.curr_node.extent.indices), new_locked_attrs, j))
+            new_intent = self.curr_node.intent.get_minus_upper(j)
+            new_extent = self.get_extent(new_intent)
+            new_obj_val = self.context.obj(self.curr_node.extent.indices)
+            new_bnd_val = self.context.bnd(self.curr_node.extent.indices)
 
-            if self.curr_node.locked_attrs[j]: # if j is a locked attribute
-                heappush(heap, Node(self.curr_node.extent, self.curr_node.intent.get_plus_lower(j), self.context.obj(self.curr_node.extent.indices), self.context.bnd(self.curr_node.extent.indices), self.curr_node.locked_attrs, j))
+            heappush(self.heap, Node(new_extent, new_intent, new_obj_val, new_bnd_val, new_locked_attrs, j))
+
+            if not self.curr_node.locked_attrs[j]: # if j is not a locked attribute
+                new_intent = self.curr_node.intent.get_plus_lower(j)
+                new_extent = self.get_extent(new_intent)
+                new_obj_val = self.context.obj(new_extent.indices)
+                new_bnd_val = self.context.bnd(new_extent.indices)
+                heappush(self.heap, Node(new_extent, new_intent, new_obj_val, new_bnd_val, self.curr_node.locked_attrs, j))
 
     def run(self, root_node):
         max_bnd_val = self.context.bnd(root_node.extent.indices)
         num_nodes = 0
         max_obj_val = 0
-        heap = []
-        heappush(heap, root_node)
+        heappush(self.heap, root_node)
         
-        while heap: # while queue is not empty
-            self.curr_node = heappop(heap)
+        while self.heap: # while queue is not empty
+            self.curr_node = heappop(self.heap)
+            
             j = self.curr_node.active_attr
-            print(self.curr_node, end="\n\n")
             max_obj_val = max(self.curr_node.obj_val, max_obj_val)
-            if max_obj_val == max_bnd_val:
-                break
             if self.context.obj(self.curr_node.extent.indices) > max_obj_val or self.curr_node == root_node: # root node check because obj > max_obj check fails on root
                 closed_intent = self.curr_node.extent.get_closure()
                 if self.is_canonical(self.curr_node.intent, closed_intent, j):
                     self.curr_node.intent = closed_intent
                     num_nodes += 1
-                    
+                    print(self.curr_node, end="\n\n")
+                    if max_obj_val == max_bnd_val:
+                        break
+                    self.push_children(j)
                     if j>0:
-                        heappush(heap, Node(self.curr_node.extent, self.curr_node.intent, self.context.obj(self.curr_node.extent.indices), self.context.bnd(self.curr_node.extent.indices), self.curr_node.locked_attrs, j-1))
+                        self.push_children(j-1)

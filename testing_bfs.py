@@ -3,11 +3,10 @@ import numpy as np
 
 
 if __name__ == "__main__":
-    #target = Utilities.rand_target_col(10, 0.5)
-    #objects = Utilities.rand_disc_num_array(10, 4, 0)
-    objects = np.array([[2,1],
-                     [3,5]])
-    target = np.array([0,1])
+    target = Utilities.rand_target_col(10, 0.5, 0)
+    objects = Utilities.rand_disc_num_array(10, 4)
+    #objects = np.array([[2,1],[3,5]])
+    #target = np.array([0,1])
     m = len(objects[0])
     n = len(objects)
     root_ext = Extent(np.arange(n), objects)
@@ -19,6 +18,6 @@ if __name__ == "__main__":
     root = Node(root_ext, intent, obj(root_ext.indices), bnd(root_ext.indices), [0]*m, m-1)
     context = Context(target, objects, obj, bnd)
 
-    my_bfs = BFS(root, np.empty, context)
+    my_bfs = BFS(root, [], context)
 
     my_bfs.run(root)
