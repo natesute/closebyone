@@ -2,6 +2,19 @@ from heapq import heappop, heappush
 import numpy as np
 
 
+class Results:
+    def __init__(self):
+        self.num_candidates = 0
+        self.num_nodes = 0
+        self.max_obj = 0
+
+    def __repr__(self):
+        repr_str = ""
+        repr_str += "Num Candidates: " + str(self.num_candidates) + "\n"
+        repr_str += "Num Nodes: " + str(self.num_nodes) + "\n"
+        repr_str += "Max Obj: " + str(self.max_obj) + "\n"
+        return repr_str
+
 class Utilities:
 
     @staticmethod
@@ -135,10 +148,11 @@ class Node:
 
 
 class BFS: # best first search
-    def __init__(self, curr_node, heap, context):
+    def __init__(self, curr_node, heap, context, res):
         self.curr_node = curr_node
         self.heap = heap
         self.context = context
+        self.res = res
 
     @staticmethod
     def is_canonical(curr_intent, new_intent, j):
@@ -177,23 +191,21 @@ class BFS: # best first search
                 heappush(self.heap, Node(new_extent, new_intent, new_obj_val, new_bnd_val, self.curr_node.locked_attrs, j))
 
     def run(self, root_node):
-        max_bnd_val = self.context.bnd(root_node.extent.indices)
-        num_nodes = 0
-        max_obj_val = 0
+        max_bnd = self.context.bnd(root_node.extent.indices)
         heappush(self.heap, root_node)
         
         while self.heap: # while queue is not empty
             self.curr_node = heappop(self.heap)
             
             j = self.curr_node.active_attr
-            max_obj_val = max(self.curr_node.obj_val, max_obj_val)
-            if self.context.obj(self.curr_node.extent.indices) > max_obj_val or self.curr_node == root_node: # root node check because obj > max_obj check fails on root
+            max_obj = max(self.curr_node.obj_val, self.res.max_obj)
+            if self.context.obj(self.curr_node.extent.indices) > self.res.max_obj or self.curr_node == root_node: # root node check because obj > max_obj check fails on root
                 closed_intent = self.curr_node.extent.get_closure()
                 if self.is_canonical(self.curr_node.intent, closed_intent, j):
                     self.curr_node.intent = closed_intent
-                    num_nodes += 1
+                    self.res.num_nodes += 1
                     print(self.curr_node, end="\n\n")
-                    if max_obj_val == max_bnd_val:
+                    if max_obj == max_bnd:
                         break
                     self.push_children(j)
                     if j>0:

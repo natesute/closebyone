@@ -1,4 +1,4 @@
-from best_first_cbo import Context, Utilities, Extent, Node, BFS
+from best_first_cbo import Context, Utilities, Extent, Node, BFS, Results
 import numpy as np
 
 
@@ -18,6 +18,8 @@ if __name__ == "__main__":
     root = Node(root_ext, intent, obj(root_ext.indices), bnd(root_ext.indices), [0]*m, m-1)
     context = Context(target, objects, obj, bnd)
 
-    my_bfs = BFS(root, [], context)
+    my_bfs = BFS(root, [], context, Results())
 
     my_bfs.run(root)
+
+    print(my_bfs.res)
