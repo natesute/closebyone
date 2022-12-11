@@ -1,6 +1,6 @@
 from iterative_cbo import BFS
 from recursive_cbo import DFS
-from search import Results, Context, Utilities as U, Extent, Node, NodeBFS
+from search import Results, Context, Utilities as U, Extent, Node
 import numpy as np
 
 
@@ -33,20 +33,21 @@ if __name__ == "__main__":
     m = len(objects[0])
     n = len(objects)
     root_ext = Extent(np.arange(n), objects)
+    intent = root_ext.get_closure()
     target_mean_root = get_target_mean(root_ext.indices)
 
-    root = Node(root_ext, 0, float("inf"), m-1, [0]*m)
+    root = Node(context, intent, m-1, [0]*m)
 
-    my_search = BFS(NodeBFS(root), [], context, Results())
+    my_search = BFS(root, root, [], context, Results())
 
-    my_search.run(root)
+    my_search.run()
 
     print("BFS results:\n\n")
     print(my_search.res)
 
-    my_search = DFS(root, [], context, Results())
+    my_search = DFS(root, root, [], context, Results())
 
-    my_search.run_numerical(root.extent)
+    my_search.run_numerical()
 
     print("DFS results:\n\n")
     print(my_search.res)

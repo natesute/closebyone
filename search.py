@@ -3,7 +3,8 @@ from typing import Callable #type: ignore
 import copy
 
 class Search:
-    def __init__(self, curr_node, heap, context, res):
+    def __init__(self, root, curr_node, heap, context, res):
+        self.root = root
         self.curr_node = curr_node
         self.heap = heap
         self.context = context
@@ -170,7 +171,7 @@ class Context:
         self.m = len(objects[0])
         self.root_indices = np.arange(self.n)
 
-    def get_extent(self, intent):
+    def get_extent(self, intent: Intent):
         new_indices = np.copy(self.root_indices)
         for j in range(self.m):
             low = intent[j][0]
@@ -221,25 +222,16 @@ class Node:
         new_pattern = np.copy(self.intent.pattern)
         new_pattern[j][1] -= 1
         new_intent = Intent(new_pattern)
+        self.extent = self.context.get_extent(self.intent)
         new_locked_attrs = np.copy(self.locked_attrs)
         new_locked_attrs[j] = True
-        return Node(new_intent, j, new_locked_attrs)
+        return Node(self.context, new_intent, j, new_locked_attrs)
     
     def get_plus_lower(self, j):
         new_pattern = np.copy(self.intent.pattern)
         new_pattern[j][0] += 1
         new_intent = Intent(new_pattern)
-        return Node(new_intent, j, np.copy(self.locked_attrs))
-
-class NodeBFS(Node):
-
-    def __init__(self, node):
-        self.context = node.context
-        self.intent = node.intent
-        self.obj_val = node.obj_val
-        self.bnd_val = node.bnd_val
-        self.active_attr = node.active_attr
-        self.locked_attrs = node.locked_attrs
+        return Node(self.context, new_intent, j, np.copy(self.locked_attrs))
 
     # bnds are inverted to allow for max heap
     def __le__(self, other):

@@ -22,9 +22,9 @@ if __name__ == "__main__":
     
     intent = root_ext.get_closure()
 
-    root = Node(root_ext, intent, obj(root_ext.indices), bnd(root_ext.indices), [0]*m, m-1)
+    root = Node(context, intent, m-1, [0]*m)
 
-    my_search = BFS(root, [], context, Results())
+    my_search = BFS(NodeBFS(root), [], context, Results())
 
     my_search.run(root)
 
