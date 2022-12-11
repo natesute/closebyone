@@ -11,3 +11,59 @@ need a different word for context class. isnt technically correct
 should i use neginf or 0 for init vals
 
 should the best query be maximally or minimally closed?
+
+does making a new Node make deepcopy of all properties?
+
+make active_attr a search property
+
+
+'''
+def search_2(self, node):
+        j = node.active_attr
+        # lower upper bound of j
+        self.res.num_candidates += 1
+        extent = self.get_extent(copy.deepcopy(intent))
+
+        if len(extent) > 0:
+            # self.res.max_obj = max(self.context.obj(extent.indices), self.res.max_obj)
+            if self.context.obj(extent.indices) >= self.res.max_obj:
+                    
+                    self.res.max_obj = self.context.obj(extent.indices)
+                    self.res.best_query = intent
+                    self.res.num_nodes += 1
+                    # check if maximum bound has been hit
+                    if self.res.max_obj == self.res.max_bnd:
+                        return
+            
+            if self.context.bnd(extent.indices) > self.res.max_obj:
+                new_intent = extent.get_closure()
+                if U.is_canonical(intent, new_intent, j):             
+                    intent = new_intent                
+                    
+                    self.res.num_nodes += 1
+                    # check if bounds can be further changed on j
+                    if not intent.fully_closed(j):
+                        # branch current attribute, only upper bound
+                        self.search_2(node.get_minus_upper(j))
+                        
+                        if not self.locked_attrs[j]:
+                            self.search_2(node.get_plus_lower(j))
+
+                    if j > 0:  # because j==0 is value col
+                        self.search(node.get_lower_attr(j))
+
+    # search changes on jth attribute downwards
+    def search(self, node):
+        j = node.active_attr
+    #     print("next attribute down\n")
+        if not node.intent.fully_closed(j): # is this needed here? (may be needed if attributes begin closed)
+            # search aug children of minus-ing upper bound
+            self.search_2(node.get_minus_upper(j))
+
+            # search aug children of plus-ing lower bound
+            self.search_2(node.get_plus_lower(j))
+
+        if j > 0:
+            # search changes on j-1th attribute downwards
+            self.search(node.get_lower_attr(j))
+'''

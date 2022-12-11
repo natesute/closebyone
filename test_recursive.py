@@ -192,10 +192,9 @@ if __name__ == '__main__':
     intent = root_ext.get_closure()
 
     root = Node(root_ext, intent, obj(root_ext.indices), bnd(root_ext.indices), [0]*m, m-1)
-    
 
     my_search = DFS(root, [], context, Results())
 
-    my_search.run_numerical(root_ext)
+    my_search.run_numerical(root)
 
     print(my_search.res)

@@ -1,6 +1,6 @@
 from heapq import heappop, heappush
 import numpy as np
-from search import Search, Extent, Node, Utilities as U
+from search import Search, NodeBFS, Utilities as U
 
 
 class BFS(Search): # best first search
@@ -12,20 +12,16 @@ class BFS(Search): # best first search
         if not self.curr_node.intent.fully_closed(j):
             new_locked_attrs = np.copy(self.curr_node.locked_attrs)
             new_locked_attrs[j] = 1
-            new_intent = self.curr_node.intent.get_minus_upper(j)
-            new_extent = self.get_extent(new_intent)
-            new_obj_val = self.context.obj(new_extent.indices)
-            new_bnd_val = self.context.bnd(new_extent.indices)
+            new_intent = self.curr_node.get_minus_upper(j)
 
-            heappush(self.heap, Node(new_extent, new_intent, new_obj_val, new_bnd_val, new_locked_attrs, j))
+            self.res.num_candidates+=1
+            heappush(self.heap, NodeBFS(new_intent, j, new_locked_attrs))
 
             if not self.curr_node.locked_attrs[j]: # if j is not a locked attribute
-                new_intent = self.curr_node.intent.get_plus_lower(j)
-                new_extent = self.get_extent(new_intent)
-                new_obj_val = self.context.obj(new_extent.indices)
-                new_bnd_val = self.context.bnd(new_extent.indices)
+                new_intent = self.curr_node.get_plus_lower(j)
                 #potentially add a check here
-                heappush(self.heap, Node(new_extent, new_intent, new_obj_val, new_bnd_val, self.curr_node.locked_attrs, j))
+                self.res.num_candidates += 1
+                heappush(self.heap, NodeBFS(new_intent, j, self.curr_node.locked_attrs))
 
     def run(self, root_node):
         max_bnd = self.context.bnd(root_node.extent.indices)

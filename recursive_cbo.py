@@ -12,43 +12,8 @@ class DFS(Search):
     def __init__(self, curr_node, heap, context, res):
         super().__init__(curr_node, heap, context, res)
 
-    def search_plus_lower(self, intent: Intent, extent: Extent, j):
-        # raise lower bound of j
-        self.res.num_candidates += 1
-        extent = self.get_extent(intent)
-        # curr_node = Node(extent, intent, 0, 0, None, j)
-        # is curr_node needed
-
-        if len(extent) > 0:
-            # self.res.max_obj = max(self.context.obj(extent.indices), self.res.max_obj)
-            if self.context.obj(extent.indices) >= self.res.max_obj:
-                    self.res.max_obj = self.context.obj(extent.indices)
-                    self.res.best_query = intent
-            if self.res.max_obj == self.res.max_bnd:
-                self.res.num_nodes += 1
-                return
-
-            if self.context.bnd(extent.indices) >= self.res.max_obj:
-                new_intent = extent.get_closure()
-                
-                # check if new intent is canonical
-                if U.is_canonical(intent, new_intent, j):
-                    intent = new_intent
-                    self.res.num_nodes += 1
-                    
-                    # print(intent)
-                    # check if bounds can be further changed on j
-                    if not intent.fully_closed(j):
-                        # branch current attribute, both bounds
-                        self.search_minus_upper(intent.get_minus_upper(j), copy.deepcopy(extent), j)
-                        
-                        self.search_plus_lower(intent.get_plus_lower(j), copy.deepcopy(extent), j)
-
-                    if j > 0:
-                        self.search(copy.deepcopy(intent), copy.deepcopy(extent), j - 1)
-
-
-    def search_minus_upper(self, intent: Intent, extent: Extent, j):
+    def search(self, node):
+        j = node.active_attr
         # lower upper bound of j
         self.res.num_candidates += 1
         extent = self.get_extent(copy.deepcopy(intent))
@@ -70,48 +35,37 @@ class DFS(Search):
                     intent = new_intent                
                     
                     self.res.num_nodes += 1
+                    self.node.active_attr = j - 1
+
+                    j = node.active_attr
                     # check if bounds can be further changed on j
-                    if not intent.fully_closed(j):
+                    if not node.intent.fully_closed(j):
                         # branch current attribute, only upper bound
-                        self.search_minus_upper(intent.get_minus_upper(j), copy.deepcopy(extent), j)
+                        self.search(node.get_minus_upper(j))
                         
+                        if not node.locked_attrs[j]:
+                            self.search(node.get_plus_lower(j))
+                    if self.node.active_attr > 0:
+                        self.node.active_attr = j - 1
+                        self.search(copy.deepcopy(node))
 
-                    if j > 0:  # because j==0 is value col
-                        self.search(copy.deepcopy(intent), copy.deepcopy(extent), j - 1)
-
-    # search changes on jth attribute downwards
-    def search(self, intent: Intent, extent: Extent, j):
-    #     print("next attribute down\n")
-        if not intent.fully_closed(j): # is this needed here? (may be needed if attributes begin closed)
-            # search aug children of minus-ing upper bound
-            self.search_minus_upper(intent.get_minus_upper(j), copy.deepcopy(extent), j)
-
-            # search aug children of plus-ing lower bound
-            self.search_plus_lower(intent.get_plus_lower(j), copy.deepcopy(extent), j)
-
-        if j > 0:
-            # search changes on j-1th attribute downwards
-            self.search(copy.deepcopy(intent), copy.deepcopy(extent), j - 1)
-
-    def run_numerical(self, extent):
-        self.res.targ_mean_root = self.context.get_target_mean(extent.indices)
-        self.res.max_bnd = self.context.bnd(extent.indices)
-        intent = extent.get_closure()
+    def run_numerical(self, root: Node):
+        self.res.targ_mean_root = self.context.get_target_mean(root.extent.indices)
+        self.res.max_bnd = self.context.bnd(root.extent.indices)
+        intent = root.extent.get_closure()
         # self.res.max_obj = max(self.context.obj(extent.indices), self.res.max_obj)
-        if self.context.obj(extent.indices) >= self.res.max_obj:
-                self.res.max_obj = self.context.obj(extent.indices)
+        if self.context.obj(root.extent.indices) >= self.res.max_obj:
+                self.res.max_obj = self.context.obj(root.extent.indices)
                 self.res.best_query = intent
-        
-        self.res.num_nodes += 1
-        
-        # check if inital objective value is maximum bound
-        if self.res.max_obj == self.res.max_bnd:
-            return
+                self.res.num_nodes += 1
+                # check if inital objective value is maximum bound
+                if self.res.max_obj == self.res.max_bnd:
+                    return
 
         # starts searching from last attribute and decrements
         j = self.context.m - 1
         def closure():
-            return self.search(copy.deepcopy(intent), copy.deepcopy(extent), j)
+            return self.search(root)
         self.res.time = timeit.timeit(closure, number=1)
         return
 

@@ -1,5 +1,6 @@
 import numpy as np # type: ignore
 from typing import Callable #type: ignore
+import copy
 
 class Search:
     def __init__(self, curr_node, heap, context, res):
@@ -7,16 +8,6 @@ class Search:
         self.heap = heap
         self.context = context
         self.res = res
-
-    def get_extent(self, intent):
-        new_indices = np.copy(self.context.root_indices)
-        for j in range(self.context.m):
-            low = intent[j][0]
-            high = intent[j][1]
-            mask = (self.context.objects[new_indices, j] >= low) & (self.context.objects[new_indices, j] <= high)
-            new_indices = new_indices[mask]
-        new_extent = Extent(new_indices, self.context.objects[new_indices])
-        return new_extent
 
     def root(self):
         return np.add.reduce(self.context.objects, axis=0) == len(self.context.objects)
@@ -34,7 +25,7 @@ class Results:
         self.num_candidates = 0
         self.num_nodes = 0
         self.max_obj = 0
-        self.best_query = None
+        self.best_node = None
         self.nodes = []
 
     def __repr__(self):
@@ -42,7 +33,7 @@ class Results:
         repr_str += "Num Candidates: " + str(self.num_candidates) + "\n"
         repr_str += "Num Nodes: " + str(self.num_nodes) + "\n"
         repr_str += "Max Obj: " + str(self.max_obj) + "\n"
-        repr_str += "Best Query: " + str(self.best_query) + "\n"
+        repr_str += "Best Node: " + str(self.best_node) + "\n"
         return repr_str
 
 
@@ -62,16 +53,6 @@ class Intent:
 
     def __getitem__(self, index):
         return self.pattern[index]
-
-    def get_minus_upper(self, j):
-        new_pattern = np.copy(self.pattern)
-        new_pattern[j][1] -= 1
-        return Intent(new_pattern)
-    
-    def get_plus_lower(self, j):
-        new_pattern = np.copy(self.pattern)
-        new_pattern[j][0] += 1
-        return Intent(new_pattern)
     
     def fully_closed(self, j):
         return self.pattern[j][0] == self.pattern[j][1]
@@ -137,7 +118,7 @@ class Utilities:
     @staticmethod
     def rand_target_col(rows, alpha, seed): # create random target column
         rng = np.random.default_rng(seed)
-        target_col = np.zeros((rows, 1))
+        target_col = np.zeros((rows,))
         end_of_1s = int(len(target_col) * alpha)
         for i in range(end_of_1s):
             target_col[i] = 1
@@ -189,6 +170,16 @@ class Context:
         self.m = len(objects[0])
         self.root_indices = np.arange(self.n)
 
+    def get_extent(self, intent):
+        new_indices = np.copy(self.root_indices)
+        for j in range(self.m):
+            low = intent[j][0]
+            high = intent[j][1]
+            mask = (self.objects[new_indices, j] >= low) & (self.objects[new_indices, j] <= high)
+            new_indices = new_indices[mask]
+        new_extent = Extent(new_indices, self.objects[new_indices])
+        return new_extent
+
 
 class Extent:
     def __init__(self, indices, objects): # objects = objects in extent
@@ -208,16 +199,15 @@ class Extent:
 
         return Intent(new_pattern)
 
-
 class Node:
-    def __init__(self, extent: Extent, intent: Intent, obj_val, bnd_val, locked_attrs, active_attr):
-        self.extent = extent
-        assert type(intent) == Intent, "node intent is not object"
+    def __init__(self, context, intent, active_attr, locked_attrs):
+        self.context = context
         self.intent = intent
-        self.obj_val = obj_val
-        self.bnd_val = bnd_val
-        self.locked_attrs = locked_attrs
+        self.extent = context.get_extent(intent)
+        self.obj_val = context.obj(self.extent.indices)
+        self.bnd_val = context.bnd(self.extent.indices)
         self.active_attr = active_attr
+        self.locked_attrs = locked_attrs
 
     def __repr__(self):
         repr_str = ""
@@ -227,19 +217,42 @@ class Node:
         repr_str += "Bound val: " + str(self.bnd_val) + "\n"
         return repr_str
 
-    # comparisons are inverted to allow for max heap
+    def get_minus_upper(self, j):
+        new_pattern = np.copy(self.intent.pattern)
+        new_pattern[j][1] -= 1
+        new_intent = Intent(new_pattern)
+        new_locked_attrs = np.copy(self.locked_attrs)
+        new_locked_attrs[j] = True
+        return Node(new_intent, j, new_locked_attrs)
+    
+    def get_plus_lower(self, j):
+        new_pattern = np.copy(self.intent.pattern)
+        new_pattern[j][0] += 1
+        new_intent = Intent(new_pattern)
+        return Node(new_intent, j, np.copy(self.locked_attrs))
 
+class NodeBFS(Node):
+
+    def __init__(self, node):
+        self.context = node.context
+        self.intent = node.intent
+        self.obj_val = node.obj_val
+        self.bnd_val = node.bnd_val
+        self.active_attr = node.active_attr
+        self.locked_attrs = node.locked_attrs
+
+    # bnds are inverted to allow for max heap
     def __le__(self, other):
-        return self.bnd_val >= other.bnd_val
+        return -self.bnd_val <= -other.bnd_val
 
     def __eq__(self, other):
-        return self.bnd_val == other.bnd_val
+        return -self.bnd_val == -other.bnd_val
 
     def __ge__(self, other):
-        return self.bnd_val <= other.bnd_val
+        return -self.bnd_val >= -other.bnd_val
 
     def __lt__(self, other):
-        return self.bnd_val > other.bnd_val
+        return -self.bnd_val < -other.bnd_val
 
     def __gt__(self, other):
-        return self.bnd_val < other.bnd_val
+        return -self.bnd_val > -other.bnd_val
