@@ -5,3 +5,9 @@ obj > max_obj vs obj >= max_obj
 is "if max_obj_val == max_bnd_val:" in right place
 
 is it quicker to get new extent by masking over old extent or is it just as good to mask over all objects
+
+need a different word for context class. isnt technically correct
+
+should i use neginf or 0 for init vals
+
+should the best query be maximally or minimally closed?

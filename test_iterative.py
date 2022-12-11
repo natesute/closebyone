@@ -1,14 +1,13 @@
 from iterative_cbo import BFS
-from recursive_cbo import DFS
 from search import Results, Context, Utilities as U, Extent, Node
 import numpy as np
 
 
 if __name__ == "__main__":
-    # target = U.rand_target_col(10, 0.5, 0)
-    # objects = U.rand_disc_num_array(10, 4)
-    target = np.array([1,1,0])
-    objects = np.array([[1,1], [2,2], [3,3]])
+    target = U.rand_target_col(10, 0.5, 0)
+    objects = U.rand_disc_num_array(10, 4)
+    # target = np.array([1,0])
+    # objects = np.array([[1,2], [3,4]])
 
     obj = U.impact_obj(target)
     bnd = U.impact_bnd(target)
@@ -29,12 +28,4 @@ if __name__ == "__main__":
 
     my_search.run(root)
 
-    print("BFS results:\n\n")
-    print(my_search.res)
-
-    my_search = DFS(root, [], context, Results())
-
-    my_search.run_numerical(root.extent)
-
-    print("DFS results:\n\n")
     print(my_search.res)
