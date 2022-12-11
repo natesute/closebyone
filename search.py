@@ -227,17 +227,19 @@ class Node:
         repr_str += "Bound val: " + str(self.bnd_val) + "\n"
         return repr_str
 
+    # comparisons are inverted to allow for max heap
+
     def __le__(self, other):
-        return self.bnd_val <= other.bnd_val
+        return self.bnd_val >= other.bnd_val
 
     def __eq__(self, other):
         return self.bnd_val == other.bnd_val
 
     def __ge__(self, other):
-        return self.bnd_val >= other.bnd_val
+        return self.bnd_val <= other.bnd_val
 
     def __lt__(self, other):
-        return self.bnd_val < other.bnd_val
+        return self.bnd_val > other.bnd_val
 
     def __gt__(self, other):
-        return self.bnd_val > other.bnd_val
+        return self.bnd_val < other.bnd_val

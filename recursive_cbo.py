@@ -35,7 +35,6 @@ class DFS(Search):
                 if U.is_canonical(intent, new_intent, j):
                     intent = new_intent
                     self.res.num_nodes += 1
-                    print(intent)
                     
                     # print(intent)
                     # check if bounds can be further changed on j
@@ -71,7 +70,6 @@ class DFS(Search):
                     intent = new_intent                
                     
                     self.res.num_nodes += 1
-                    print(intent)
                     # check if bounds can be further changed on j
                     if not intent.fully_closed(j):
                         # branch current attribute, only upper bound

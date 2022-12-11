@@ -5,10 +5,10 @@ import numpy as np
 
 
 if __name__ == "__main__":
-    # target = U.rand_target_col(10, 0.5, 0)
-    # objects = U.rand_disc_num_array(10, 4)
-    target = np.array([1,1,0])
-    objects = np.array([[1,1], [2,2], [3,3]])
+    target = U.rand_target_col(10, 0.5, 0)
+    objects = U.rand_disc_num_array(10, 4)
+    # target = np.array([1,1,0])
+    # objects = np.array([[1,1], [2,2], [3,3]])
 
     obj = U.impact_obj(target)
     bnd = U.impact_bnd(target)
