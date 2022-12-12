@@ -36,7 +36,7 @@ class BFS(IPSearch): # best first search
             if self.curr_node.obj_val >= self.res.max_obj:
                     self.res.max_obj = self.curr_node.obj_val
                     self.res.best_node = self.curr_node
-            if self.context.bnd(self.curr_node.extent.indices) > self.res.max_obj or self.curr_node == self.root: # root node check because obj > max_obj check fails on root
+            if self.curr_node.bnd_val > self.res.max_obj or self.curr_node == self.root: # root node check because obj > max_obj check fails on root
                 closed_intent = self.curr_node.extent.get_closure()
                 if U.is_canonical(self.curr_node.intent, closed_intent, j):
                     self.curr_node.intent = closed_intent

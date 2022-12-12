@@ -22,7 +22,7 @@ class PropSearch:
 
         for prop in range(i, num):
             self.res.num_candidates += 1
-            if self.res.max_obj == self.res.max_bnd:
+            if self.res.max_obj == self.context.max_bnd:
                 return
             aug_indices = self.curr_node.extent[self.context.objects[self.curr_node.extent, prop]] 
             aug_extent = Extent(aug_indices, self.context.objects)
@@ -37,11 +37,11 @@ class PropSearch:
             aug_node = PropNode(self.context, aug_query, aug_extent)
 
             # self.res.max_obj = max(self.context.obj(aug_extent), self.res.max_obj)
-            if self.context.obj(aug_extent.indices) >= self.res.max_obj:
-                self.res.max_obj = self.context.obj(aug_extent.indices)
+            if aug_node.obj_val >= self.res.max_obj:
+                self.res.max_obj = aug_node.obj_val
                 self.res.best_node = aug_node
 
-            if self.res.max_obj > self.context.bnd(aug_extent.indices):
+            if self.res.max_obj > aug_node.bnd_val:
                 continue
 
             prefix_pres = True

@@ -24,7 +24,6 @@ class Results:
         self.num_nodes = 0
         self.max_obj = 0
         self.best_node = None
-        self.nodes = []
         self.time = 0
 
     def __repr__(self):
@@ -32,7 +31,7 @@ class Results:
         repr_str += "Num Candidates: " + str(self.num_candidates) + "\n"
         repr_str += "Num Nodes: " + str(self.num_nodes) + "\n"
         repr_str += "Max Obj: " + str(self.max_obj) + "\n"
-        repr_str += "Best Node: " + str(self.best_node) + "\n"
+        repr_str += "\n**********Best Node**********\n" + str(self.best_node) + "*****************************\n\n"
         repr_str += "Time: " + str(self.time) + "\n"
         return repr_str
 
@@ -211,6 +210,7 @@ class Context:
         self.n = len(target)
         self.m = len(objects[0])
         self.root_indices = np.arange(self.n)
+        self.max_bnd = self.bnd(self.root_indices)
 
     def get_extent(self, intent: Intent):
         new_indices = np.copy(self.root_indices)
@@ -236,9 +236,15 @@ class PropNode:
         self.context = context
         self.query = query
         self.extent = extent
+        self.obj_val = context.obj(self.extent.indices)
+        self.bnd_val = context.bnd(self.extent.indices)
     
     def __str__(self):
-        return str(self.query)
+        repr_str = ""
+        repr_str += "Query: " + str(self.query) + "\n"
+        repr_str += "Obj val: " + str(self.obj_val) + "\n"
+        repr_str += "Bound val: " + str(self.bnd_val) + "\n"
+        return repr_str
         
 
 class IPNode:

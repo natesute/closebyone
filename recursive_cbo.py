@@ -24,16 +24,16 @@ class DFS(IPSearch):
 
         if len(extent) > 0:
             # self.res.max_obj = max(self.context.obj(extent.indices), self.res.max_obj)
-            if self.context.obj(extent.indices) >= self.res.max_obj:
+            if node.obj_val >= self.res.max_obj:
                     
-                    self.res.max_obj = self.context.obj(extent.indices)
+                    self.res.max_obj = node.obj_val
                     self.res.best_node = node
                     self.res.num_nodes += 1
                     # check if maximum bound has been hit
-                    if self.res.max_obj == self.res.max_bnd:
+                    if self.res.max_obj == self.context.max_bnd:
                         return
             
-            if self.context.bnd(extent.indices) > self.res.max_obj:
+            if node.bnd_val > self.res.max_obj:
                 new_intent = extent.get_closure()
                 if U.is_canonical(intent, new_intent, j):             
                     intent = new_intent                
