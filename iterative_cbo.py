@@ -34,7 +34,7 @@ class BFS(Search): # best first search
             # self.res.max_obj = max(self.curr_node.obj_val, self.res.max_obj)
             if self.curr_node.obj_val >= self.res.max_obj:
                     self.res.max_obj = self.curr_node.obj_val
-                    self.res.best_query = self.curr_node.intent
+                    self.res.best_node = self.curr_node
             if self.context.bnd(self.curr_node.extent.indices) > self.res.max_obj or self.curr_node == self.root: # root node check because obj > max_obj check fails on root
                 closed_intent = self.curr_node.extent.get_closure()
                 if U.is_canonical(self.curr_node.intent, closed_intent, j):

@@ -5,11 +5,11 @@ import numpy as np
 
 
 if __name__ == "__main__":
-    # target = U.rand_target_col(10, 0.5, 0)
-    # objects = U.rand_disc_num_array(10, 5)
+    target = U.rand_target_col(5, 0.5, 0)
+    objects = U.rand_disc_num_array(5, 100)
     
-    target = np.array([1,0,1,0,1,0,0,1,0,1])
-    objects = np.array([[5, 7, 3, 7, 4],
+    # target = np.array([1,0,1,0,1,0,0,1,0,1])
+    ''' objects = np.array([[5, 7, 3, 7, 4],
                         [7, 3, 7, 4, 7],
                         [3, 1, 2, 8, 8],
                         [6, 4, 8, 4, 1],
@@ -19,10 +19,11 @@ if __name__ == "__main__":
                         [2, 5, 5, 4, 1],
                         [7, 3, 7, 2, 4],
                         [2, 3, 2, 3, 9]])
-    # target = np.array([0,1,1,0,0,0,1,1,1,1])
-    # objects = np.array([[4,1], [7,10], [5,5], [2,2], [1,1], [3,3], [6,6], [8,8], [9,9], [10,10]])
-    print(target)
-    print(objects)
+    '''
+    # target = np.array([0,1,1])
+    # objects = np.array([[12,1], [7,10], [20, 4]])
+    # print(target)
+    # print(objects)
 
     obj = U.impact_obj(target)
     bnd = U.impact_bnd(target)
@@ -44,6 +45,7 @@ if __name__ == "__main__":
 
     print("BFS results:\n\n")
     print(my_search.res)
+    '''
 
     my_search = DFS(root, root, [], context, Results())
 
@@ -51,3 +53,4 @@ if __name__ == "__main__":
 
     print("DFS results:\n\n")
     print(my_search.res)
+    '''

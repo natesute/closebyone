@@ -24,7 +24,7 @@ class DFS(Search):
             if self.context.obj(extent.indices) >= self.res.max_obj:
                     
                     self.res.max_obj = self.context.obj(extent.indices)
-                    self.res.best_query = intent
+                    self.res.best_node = node
                     self.res.num_nodes += 1
                     # check if maximum bound has been hit
                     if self.res.max_obj == self.res.max_bnd:
@@ -36,9 +36,6 @@ class DFS(Search):
                     intent = new_intent                
                     
                     self.res.num_nodes += 1
-                    node.active_attr = j - 1
-
-                    j = node.active_attr
                     # check if bounds can be further changed on j
                     if not node.intent.fully_closed(j):
                         # branch current attribute, only upper bound
