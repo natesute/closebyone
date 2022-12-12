@@ -27,7 +27,8 @@ class BFS(Search): # best first search
         max_bnd = self.context.bnd(self.root.extent.indices)
         heappush(self.heap, self.root)
         
-        while self.heap: # while queue is not empty
+        while self.heap: # while queue is not empty]
+            
             self.curr_node = heappop(self.heap)
             
             j = self.curr_node.active_attr

@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     root = Node(context, intent, m-1, [0]*m)
 
-    my_search = BFS(NodeBFS(root), [], context, Results())
+    my_search = BFS(Node(root), [], context, Results())
 
     my_search.run(root)
 

@@ -6,6 +6,7 @@ from numba.core.types import Array # type: ignore
 import copy # type: ignore
 # from numba import njit
 # from numba.experimental import jitclass
+from search import Extent
 
 class DFS(Search):
 
@@ -112,10 +113,11 @@ class DFS(Search):
 
 
     def run_binarised(self):
-        root_query = self.root(self.context.objects)
-        extent = np.arange(len(self.context.objects))
+        root_query = self.context.check_root()
+        extent = Extent(np.arange(self.context.n))
         ext_sizes = np.add.reduce(self.context.objects)
-        self.context.target_mean_root = self.context.target_mean(extent.indices)
+        get_target_mean = U.target_mean(self.context.target)
+        self.context.target_mean_root = get_target_mean(extent.indices)
         self.res.max_bnd = self.res.bnd(extent.indices)
 
         def closure():

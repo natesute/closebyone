@@ -10,10 +10,6 @@ class Search:
         self.context = context
         self.res = res
 
-    def root(self):
-        return np.add.reduce(self.context.objects, axis=0) == len(self.context.objects)
-
-
     def implied_on(self, j, extent):
         for i in extent:
             if not self.context.objects[i, j]:
@@ -57,6 +53,28 @@ class Intent:
     
     def fully_closed(self, j):
         return self.pattern[j][0] == self.pattern[j][1]
+
+
+class Extent:
+    def __init__(self, indices, objects): # objects = objects in extent
+        self.indices = indices
+        self.objects = objects
+        self.m = (len(objects[0]) if len(objects) > 0 else 0)
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, index):
+        return self.indices[index]
+
+    def get_closure(self):
+        new_pattern = np.empty((self.m, 2))
+
+        for j in range(self.m):
+            new_pattern[j][0] = np.min(self.objects, axis=0)[j] # get min value in attribute, set as lower threshold
+            new_pattern[j][1] = np.max(self.objects, axis=0)[j] # get max value in attribute, set as upper threshold
+
+        return Intent(new_pattern)
 
 
 class Utilities:
@@ -181,24 +199,8 @@ class Context:
         new_extent = Extent(new_indices, self.objects[new_indices])
         return new_extent
 
-
-class Extent:
-    def __init__(self, indices, objects): # objects = objects in extent
-        self.indices = indices
-        self.objects = objects
-        self.m = (len(objects[0]) if len(objects) > 0 else 0)
-
-    def __len__(self):
-        return len(self.indices)
-
-    def get_closure(self):
-        new_pattern = np.empty((self.m, 2))
-
-        for j in range(self.m):
-            new_pattern[j][0] = np.min(self.objects, axis=0)[j] # get min value in attribute, set as lower threshold
-            new_pattern[j][1] = np.max(self.objects, axis=0)[j] # get max value in attribute, set as upper threshold
-
-        return Intent(new_pattern)
+    def check_root(self):
+        return np.add.reduce(self.objects, axis=0) == len(self.objects)
 
 class Node:
     def __init__(self, context, intent, active_attr, locked_attrs):

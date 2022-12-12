@@ -35,10 +35,10 @@ if __name__ == "__main__":
     n = len(objects)
     root_ext = Extent(np.arange(n), objects)
     intent = root_ext.get_closure()
-    target_mean_root = get_target_mean(root_ext.indices)
 
     root = Node(context, intent, m-1, [0]*m)
 
+    '''
     my_search = BFS(root, root, [], context, Results())
 
     my_search.run()
@@ -46,11 +46,12 @@ if __name__ == "__main__":
     print("BFS results:\n\n")
     print(my_search.res)
     '''
+    
 
     my_search = DFS(root, root, [], context, Results())
 
-    my_search.run_numerical()
+    my_search.run_binarised()
 
     print("DFS results:\n\n")
     print(my_search.res)
-    '''
+    
