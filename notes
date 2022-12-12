@@ -16,6 +16,8 @@ does making a new Node make deepcopy of all properties?
 
 make active_attr a search property
 
+should get_target_mean be set up more efficiently?
+
 
 '''
 def search_2(self, node):

@@ -1,9 +1,9 @@
 from heapq import heappop, heappush
 import numpy as np
-from search import Search, Node, Utilities as U
+from search import IPSearch, Utilities as U
 
 
-class BFS(Search): # best first search
+class BFS(IPSearch): # best first search
     def __init__(self, root, curr_node, heap, context, res):
         super().__init__(root, curr_node, heap, context, res)
 
@@ -23,12 +23,12 @@ class BFS(Search): # best first search
                 self.res.num_candidates += 1
                 heappush(self.heap, plus_lower)
 
-    def run(self):
+    def search(self):
         max_bnd = self.context.bnd(self.root.extent.indices)
         heappush(self.heap, self.root)
         
         while self.heap: # while queue is not empty]
-            
+
             self.curr_node = heappop(self.heap)
             
             j = self.curr_node.active_attr
@@ -46,3 +46,6 @@ class BFS(Search): # best first search
                     self.push_children(j)
                     if j>0:
                         self.push_children(j-1)
+
+    def run(self):
+        return self.search()

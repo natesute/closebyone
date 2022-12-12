@@ -1,57 +1,59 @@
 from iterative_cbo import BFS
 from recursive_cbo import DFS
-from search import Results, Context, Utilities as U, Extent, Node
-import numpy as np
+from binarised import PropSearch
 
+from search import Results, Context, Utilities as U, Extent, IPNode, PropNode, Query
+import numpy as np
+import timeit
+
+class Test:
+    def __init__(self, objects, target, search_type):
+        self.objects = objects
+        self.target = target
+        self.search_type = search_type
+
+    def run(self):
+        obj = U.impact_obj(self.target)
+        bnd = U.impact_bnd(self.target)
+        context = Context(self.target, self.objects, obj, bnd)
+        m = len(self.objects[0])
+        n = len(self.objects)
+
+        root_ext = Extent(np.arange(n), self.objects)
+        max_bnd = context.bnd(root_ext.indices)
+
+        if self.search_type == "binarised":
+            root_ext = Extent(np.arange(n), self.objects)
+            root_query = Query(context.check_root())
+            root = PropNode(context, root_query, root_ext)
+            context.ext_sizes = np.add.reduce(context.objects)
+            my_search = PropSearch(root, context, Results())
+            
+        elif self.search_type == "bfs":
+            root_ext = Extent(np.arange(n), self.objects)
+            intent = root_ext.get_closure()
+            root = IPNode(context, intent, m-1, [0]*m)
+            my_search = BFS(root, root, [], context, Results())
+        elif self.search_type == "dfs":
+            root_ext = Extent(np.arange(n), self.objects)
+            intent = root_ext.get_closure()
+            root = IPNode(context, intent, m-1, [0]*m)
+            my_search = DFS(root, root, [], context, Results())
+        my_search.res.max_bnd = max_bnd
+        my_search.res.time = timeit.timeit(my_search.run, number=1)
+        return my_search.res
+    
 
 if __name__ == "__main__":
-    target = U.rand_target_col(5, 0.5, 0)
-    objects = U.rand_disc_num_array(5, 100)
-    
-    # target = np.array([1,0,1,0,1,0,0,1,0,1])
-    ''' objects = np.array([[5, 7, 3, 7, 4],
-                        [7, 3, 7, 4, 7],
-                        [3, 1, 2, 8, 8],
-                        [6, 4, 8, 4, 1],
-                        [6, 2, 8, 5, 9],
-                        [6, 4, 4, 5, 5],
-                        [2, 6, 2, 8, 6],
-                        [2, 5, 5, 4, 1],
-                        [7, 3, 7, 2, 4],
-                        [2, 3, 2, 3, 9]])
-    '''
-    # target = np.array([0,1,1])
-    # objects = np.array([[12,1], [7,10], [20, 4]])
-    # print(target)
-    # print(objects)
-
-    obj = U.impact_obj(target)
-    bnd = U.impact_bnd(target)
-    get_target_mean = U.target_mean(target)
-    context = Context(target, objects, obj, bnd)
-    #objects = np.array([[2,1],[3,5]])
-    #target = np.array([0,1])
-    m = len(objects[0])
-    n = len(objects)
-    root_ext = Extent(np.arange(n), objects)
-    intent = root_ext.get_closure()
-
-    root = Node(context, intent, m-1, [0]*m)
-
-    '''
-    my_search = BFS(root, root, [], context, Results())
-
-    my_search.run()
-
-    print("BFS results:\n\n")
-    print(my_search.res)
-    '''
-    
-
-    my_search = DFS(root, root, [], context, Results())
-
-    my_search.run_binarised()
-
-    print("DFS results:\n\n")
-    print(my_search.res)
-    
+    target = U.rand_target_col(3, 0.5, 0)
+    objects = U.rand_disc_num_array(3, 2)
+    objects_bin = U.disc_num_to_bin(objects) # binarise objects
+    test = Test(objects, target, "dfs")
+    print("dfs\n\n")
+    print(test.run())
+    test = Test(objects, target, "bfs")
+    print("bfs\n\n")
+    print(test.run())
+    test = Test(objects_bin, target, "binarised")
+    print("binarised\n\n")
+    print(test.run())

@@ -2,7 +2,7 @@ import numpy as np # type: ignore
 from typing import Callable #type: ignore
 import copy
 
-class Search:
+class IPSearch:
     def __init__(self, root, curr_node, heap, context, res):
         self.root = root
         self.curr_node = curr_node
@@ -10,11 +10,12 @@ class Search:
         self.context = context
         self.res = res
 
-    def implied_on(self, j, extent):
-        for i in extent:
-            if not self.context.objects[i, j]:
-                return False
-        return True
+
+class PropSearch:
+    def __init__(self, curr_node, context, res):
+        self.curr_node = curr_node
+        self.context = context
+        self.res = res
 
 
 class Results:
@@ -24,6 +25,7 @@ class Results:
         self.max_obj = 0
         self.best_node = None
         self.nodes = []
+        self.time = 0
 
     def __repr__(self):
         repr_str = ""
@@ -31,6 +33,7 @@ class Results:
         repr_str += "Num Nodes: " + str(self.num_nodes) + "\n"
         repr_str += "Max Obj: " + str(self.max_obj) + "\n"
         repr_str += "Best Node: " + str(self.best_node) + "\n"
+        repr_str += "Time: " + str(self.time) + "\n"
         return repr_str
 
 
@@ -54,6 +57,26 @@ class Intent:
     def fully_closed(self, j):
         return self.pattern[j][0] == self.pattern[j][1]
 
+
+class Query:
+    def __init__(self, props):
+        self.props = props
+
+    def __len__(self):
+        return len(self.props)
+
+    def __getitem__(self, index):
+        return self.props[index]
+    
+    def __setitem__(self, index, value):
+        self.props[index] = value
+    
+    def __str__(self):
+        str = []
+        for prop in self.props:
+            str.append(f"{prop:.0f}")
+
+        return f"<{(', ').join(str)}>"
 
 class Extent:
     def __init__(self, indices, objects): # objects = objects in extent
@@ -202,7 +225,23 @@ class Context:
     def check_root(self):
         return np.add.reduce(self.objects, axis=0) == len(self.objects)
 
-class Node:
+    def implied_on(self, j, extent):
+        for i in extent:
+            if not self.objects[i, j]:
+                return False
+        return True
+
+class PropNode:
+    def __init__(self, context, query, extent):
+        self.context = context
+        self.query = query
+        self.extent = extent
+    
+    def __str__(self):
+        return str(self.query)
+        
+
+class IPNode:
     def __init__(self, context, intent, active_attr, locked_attrs):
         self.context = context
         self.intent = intent
@@ -227,13 +266,13 @@ class Node:
         self.extent = self.context.get_extent(self.intent)
         new_locked_attrs = np.copy(self.locked_attrs)
         new_locked_attrs[j] = True
-        return Node(self.context, new_intent, j, new_locked_attrs)
+        return IPNode(self.context, new_intent, j, new_locked_attrs)
     
     def get_plus_lower(self, j):
         new_pattern = np.copy(self.intent.pattern)
         new_pattern[j][0] += 1
         new_intent = Intent(new_pattern)
-        return Node(self.context, new_intent, j, np.copy(self.locked_attrs))
+        return IPNode(self.context, new_intent, j, np.copy(self.locked_attrs))
 
     # bnds are inverted to allow for max heap
     def __le__(self, other):
