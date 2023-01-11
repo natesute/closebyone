@@ -1,7 +1,7 @@
 from search import Results
 import numpy as np
 import timeit
-from search import PropSearch, Extent, PropNode
+from search import, PropNode
 from copy import deepcopy
 
 # binarised approach

@@ -18,54 +18,75 @@ make active_attr a search property
 
 should get_target_mean be set up more efficiently?
 
+should inter-ordinal scaling be used for ip search (? could binarisation be used?
 
-'''
-def search_2(self, node):
-        j = node.active_attr
-        # lower upper bound of j
-        self.res.num_candidates += 1
-        extent = self.get_extent(copy.deepcopy(intent))
+is it a significant improvement to have values already calculated for obj+bnd funcs? Happens in mine not in realkd
 
-        if len(extent) > 0:
-            # self.res.max_obj = max(self.context.obj(extent.indices), self.res.max_obj)
-            if self.context.obj(extent.indices) >= self.res.max_obj:
-                    
-                    self.res.max_obj = self.context.obj(extent.indices)
-                    self.res.best_query = intent
-                    self.res.num_nodes += 1
-                    # check if maximum bound has been hit
-                    if self.res.max_obj == self.res.max_bnd:
-                        return
+assert labels not all zero
+
+I want to better understand how order of columns in binarised dataset affects performance
+
+
+from heapq import heappop, heappush
+import numpy as np
+from search import IPSearch, Utilities as U
+
+
+class BFS(IPSearch): # best first search
+    def __init__(self, root, curr_node, heap, context, res, obj, bnd):
+        super().__init__(root, curr_node, heap, context, res, obj, bnd)
+
+
+    def push_children(self, curr_node, j, j_shift):
+        if not curr_node.intent.fully_closed(j):
+            new_locked_attrs = np.copy(curr_node.locked_attrs)
+            new_locked_attrs[j] = 1
+            minus_upper = curr_node.get_minus_upper(j)
+
+            self.res.num_candidates += 1
+            minus_upper.obj_val = self.obj(minus_upper.extension.indices)
+            minus_upper.bnd_val = self.bnd(minus_upper.extension.indices)
+            heappush(self.heap, minus_upper)
+
+            if not curr_node.locked_attrs[j]: # if j is not a locked attribute
+                plus_lower = curr_node.get_plus_lower(j)
+                #potentially add a check here
+                self.res.num_candidates += 1
+                plus_lower.obj_val = self.obj(plus_lower.extension.indices)
+                plus_lower.bnd_val = self.bnd(plus_lower.extension.indices)
+                heappush(self.heap, plus_lower)
+        if j_shift:
+            shifted_node = 
+            heappush(self.heap, )
+
+    def search(self):
+        max_bnd = self.bnd(self.root.extension.indices)
+        self.root.obj_val = self.obj(self.root.extension.indices)
+        self.root.bnd_val = max_bnd
+        heappush(self.heap, self.root)
+        
+        while self.heap: # while queue is not empty
+
+            curr_node = heappop(self.heap)
+            curr_node.obj_val = self.obj(curr_node.extension.indices)
+            curr_node.bnd_val = self.bnd(curr_node.extension.indices)
             
-            if self.context.bnd(extent.indices) > self.res.max_obj:
-                new_intent = extent.get_closure()
-                if U.is_canonical(intent, new_intent, j):             
-                    intent = new_intent                
-                    
+            j = curr_node.active_attr
+            # self.res.max_obj = max(self.curr_node.obj_val, self.res.max_obj)
+            if curr_node.obj_val >= self.res.max_obj:
+                    self.res.max_obj = curr_node.obj_val
+                    curr_node.intent = curr_node.extension.get_closure()
+                    self.res.best_node = curr_node
+            if curr_node.bnd_val > self.res.max_obj: # or self.curr_node == self.root: # root node check because bnd > max_obj check fails on root
+                closed_intent = curr_node.extension.get_closure() # maybe make this conditional to avoid repeat closure
+                if U.is_canonical(curr_node.intent, closed_intent, j):
+                    curr_node.intent = closed_intent
                     self.res.num_nodes += 1
-                    # check if bounds can be further changed on j
-                    if not intent.fully_closed(j):
-                        # branch current attribute, only upper bound
-                        self.search_2(node.get_minus_upper(j))
-                        
-                        if not self.locked_attrs[j]:
-                            self.search_2(node.get_plus_lower(j))
+                    if self.res.max_obj == max_bnd:
+                        break
+                    self.push_children(curr_node, j)
+                    if j>0:
+                        self.push_children(curr_node, j-1, j_shift=True)
 
-                    if j > 0:  # because j==0 is value col
-                        self.search(node.get_lower_attr(j))
-
-    # search changes on jth attribute downwards
-    def search(self, node):
-        j = node.active_attr
-    #     print("next attribute down\n")
-        if not node.intent.fully_closed(j): # is this needed here? (may be needed if attributes begin closed)
-            # search aug children of minus-ing upper bound
-            self.search_2(node.get_minus_upper(j))
-
-            # search aug children of plus-ing lower bound
-            self.search_2(node.get_plus_lower(j))
-
-        if j > 0:
-            # search changes on j-1th attribute downwards
-            self.search(node.get_lower_attr(j))
-'''
+    def run(self):
+        return self.search()

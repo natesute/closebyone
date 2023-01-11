@@ -1,14 +1,21 @@
 import numpy as np # type: ignore
-from typing import Callable #type: ignore
 import copy
+from realkd.logic import TabulatedProposition
+import sortednp as snp
+from numpy import array
+from bitarray import bitarray
+from bitarray.util import subset
+from collections import defaultdict
+import pandas as pd
+from math import inf
 
 class IPSearch:
-    def __init__(self, root, curr_node, heap, context, res):
-        self.root = root
-        self.curr_node = curr_node
+    def __init__(self, heap, ctx, res, obj, bnd):
         self.heap = heap
-        self.context = context
+        self.ctx = ctx
         self.res = res
+        self.obj = obj
+        self.bnd = bnd
 
 
 class PropSearch:
@@ -22,8 +29,8 @@ class Results:
     def __init__(self):
         self.num_candidates = 0
         self.num_nodes = 0
-        self.max_obj = 0
-        self.best_node = None
+        self.max_obj = -inf
+        self.opt_node = None
         self.time = 0
 
     def __repr__(self):
@@ -37,7 +44,7 @@ class Results:
 
 
 class Intent:
-    def __init__(self, pattern):
+    def __init__(self, pattern=None):
         self.pattern = pattern
     
     def __repr__(self):
@@ -77,27 +84,6 @@ class Query:
 
         return f"<{(', ').join(str)}>"
 
-class Extent:
-    def __init__(self, indices, objects): # objects = objects in extent
-        self.indices = indices
-        self.objects = objects
-        self.m = (len(objects[0]) if len(objects) > 0 else 0)
-
-    def __len__(self):
-        return len(self.indices)
-
-    def __getitem__(self, index):
-        return self.indices[index]
-
-    def get_closure(self):
-        new_pattern = np.empty((self.m, 2))
-
-        for j in range(self.m):
-            new_pattern[j][0] = np.min(self.objects, axis=0)[j] # get min value in attribute, set as lower threshold
-            new_pattern[j][1] = np.max(self.objects, axis=0)[j] # get max value in attribute, set as upper threshold
-
-        return Intent(new_pattern)
-
 
 class Utilities:
 
@@ -111,9 +97,10 @@ class Utilities:
 
     @staticmethod
     def disc_num_to_bin(old_objects_num):
-        '''converts discrete numerical objectsset to binary'''
+        '''converts discrete numerical dataset to binary'''
         objects_num = np.copy(old_objects_num)
         objects_bin = []
+        props = []
         # range through attributes (reversed)
         for att in range(len(objects_num[0])-1, -1, -1):
             col = objects_num[:, att]
@@ -125,6 +112,7 @@ class Utilities:
                 new_col[col <= thresholds[i]] = True
                 new_col[col > thresholds[i]] = False
                 objects_bin.append(new_col)
+                props.append(f"x({att}) <= {thresholds[i]}")
             # range through ordered threshold values
             for i in range(len(thresholds)):
                 new_col = np.copy(col)
@@ -132,12 +120,15 @@ class Utilities:
                 new_col[col >= thresholds[i]] = True
                 new_col[col < thresholds[i]] = False
                 objects_bin.append(new_col)
+                props.append(f"x({att}) >= {thresholds[i]}")
         # columns were appended to bin_d, so must be transposed to actually be columns
         objects_bin = np.array(objects_bin, dtype=bool).T
+        # props = np.array(props, dtype=str)
         return objects_bin
 
+    @staticmethod
     def cont_num_to_bin(old_objects_num):
-        '''converts continuous numerical objectsset to binary'''
+        '''converts continuous numerical dataset to binary'''
         objects_num = np.copy(old_objects_num)
         objects_bin = []
         for att in range(0, len(objects_num[0])-1, -1):
@@ -157,105 +148,77 @@ class Utilities:
         return objects_bin
 
     @staticmethod
-    def rand_target_col(rows, alpha, seed): # create random target column
+    def rand_labels(rows, alpha, seed): # create random labels column
         rng = np.random.default_rng(seed)
-        target_col = np.zeros((rows,))
-        end_of_1s = int(len(target_col) * alpha)
+        labels = np.zeros((rows,))
+        end_of_1s = int(len(labels) * alpha)
         for i in range(end_of_1s):
-            target_col[i] = 1
-        rng.shuffle(target_col)
-        return target_col
-
-    @staticmethod
-    def rand_disc_num_array(rows, cols):
-        '''create random discrete numerical array'''
-        objects_cols = np.random.randint(1, 10, (rows, cols))
-        return objects_cols
+            labels[i] = 1
+        rng.shuffle(labels)
+        return labels
     
     @staticmethod
-    def rand_cont_num_array(rows, cols):
-        '''create random continuous numerical array'''
-        objects_cols = np.random.rand(rows, cols)
-        return objects_cols
+    def rand_disc_df(rows, cols):
+        data = np.random.randint(0, 10, size=(rows, cols))
+        df = pd.DataFrame(data, columns=[f'x({i})' for i in range(cols)])
+        return df
 
     @staticmethod
-    def impact_obj(target):
-        root_indices = np.arange(len(target))
-        return lambda indices : (len(indices) / len(target)) * (Utilities.target_mean(target)(indices) - Utilities.target_mean(target)(root_indices))
-    
-    @staticmethod
-    def impact_bnd(target):
-        root_indices = np.arange(len(target))
-        return lambda indices : (Utilities.target_sum(target)(indices) / len(target)) * (1 - Utilities.target_mean(target)(root_indices))
+    def rand_cont_df(rows, cols):
+        data = np.random.rand(rows, cols)
+        df = pd.DataFrame(data, columns=[f'x({i})' for i in range(cols)])
+        return df
 
-    @staticmethod
-    def target_mean(target: np.ndarray) -> Callable[[np.ndarray], float]:
-        '''returns a function that takes an array of indices and returns the mean of the target column at those indices'''
-        return lambda indices : target[indices].mean()
+    rand_disc_num_array = lambda rows, cols : np.random.randint(1, 10, (rows, cols))
 
-    @staticmethod
-    def target_sum(target: np.ndarray) -> Callable[[np.ndarray], float]:
-        '''returns a function that takes an array of indices and returns the sum of the target column at those indices'''
-        return lambda indices : target[indices].sum()
+    # rand_cont_num_array = lambda rows, cols : np.random.rand(rows, cols)
 
+    # impact_obj = lambda ctx : lambda indices : (len(indices) / ctx.n) * (ctx.labels[indices].mean() - ctx.labels_mean)
 
-class Context:
-    def __init__(self, target, objects, obj, bnd):
+    # impact_bnd = lambda ctx : lambda indices : (ctx.labels[indices].sum() / ctx.n) * (1 - ctx.labels_mean)
+
+    # def impact_count_mean(labels):
+    #     n = len(labels)
+    #     m0 = sum(labels)/n
+
+    #     def f(c, m):
+    #         return c/n * (m - m0)
+
+    #     return f
+
+class NumContext:
+    def __init__(self, objects):
         self.objects = objects
-        self.target = target
-        self.obj = obj
-        self.bnd = bnd
-        self.get_target_mean = Utilities.target_mean(target)
-        self.get_target_sum = Utilities.target_sum(target)
-        self.n = len(target)
+        self.n = len(objects)
         self.m = len(objects[0])
-        self.root_indices = np.arange(self.n)
-        self.max_bnd = self.bnd(self.root_indices)
 
-    def get_extent(self, intent: Intent):
-        new_indices = np.copy(self.root_indices)
+    def extension(self, intent: Intent): # get extension of interval pattern intent
+        new_extension = np.arange(self.n)
         for j in range(self.m):
             low = intent[j][0]
             high = intent[j][1]
-            mask = (self.objects[new_indices, j] >= low) & (self.objects[new_indices, j] <= high)
-            new_indices = new_indices[mask]
-        new_extent = Extent(new_indices, self.objects[new_indices])
-        return new_extent
+            mask = (self.objects[new_extension, j] >= low) & (self.objects[new_extension, j] <= high)
+            new_extension = new_extension[mask]
+        return new_extension
 
-    def check_root(self):
-        return np.add.reduce(self.objects, axis=0) == len(self.objects)
+    def closure(self, extension):
+        new_pattern = np.empty((self.m, 2))
 
-    def implied_on(self, j, extent):
-        for i in extent:
-            if not self.objects[i, j]:
-                return False
-        return True
+        for j in range(self.m):
+            new_pattern[j][0] = np.min(self.objects[extension], axis=0)[j] # get min value in attribute, set as lower threshold
+            new_pattern[j][1] = np.max(self.objects[extension], axis=0)[j] # get max value in attribute, set as upper threshold
 
-class PropNode:
-    def __init__(self, context, query, extent):
-        self.context = context
-        self.query = query
-        self.extent = extent
-        self.obj_val = context.obj(self.extent.indices)
-        self.bnd_val = context.bnd(self.extent.indices)
-    
-    def __str__(self):
-        repr_str = ""
-        repr_str += "Query: " + str(self.query) + "\n"
-        repr_str += "Obj val: " + str(self.obj_val) + "\n"
-        repr_str += "Bound val: " + str(self.bnd_val) + "\n"
-        return repr_str
+        return Intent(new_pattern)
         
 
 class IPNode:
-    def __init__(self, context, intent, active_attr, locked_attrs):
-        self.context = context
+    def __init__(self, ctx, intent, active_attr=None, locked_attrs=None, shifted=False):
+        self.ctx = ctx
         self.intent = intent
-        self.extent = context.get_extent(intent)
-        self.obj_val = context.obj(self.extent.indices)
-        self.bnd_val = context.bnd(self.extent.indices)
+        self.extension = ctx.extension(intent)
         self.active_attr = active_attr
         self.locked_attrs = locked_attrs
+        self.shifted = shifted
 
     def __repr__(self):
         repr_str = ""
@@ -269,29 +232,83 @@ class IPNode:
         new_pattern = np.copy(self.intent.pattern)
         new_pattern[j][1] -= 1
         new_intent = Intent(new_pattern)
-        self.extent = self.context.get_extent(self.intent)
         new_locked_attrs = np.copy(self.locked_attrs)
         new_locked_attrs[j] = True
-        return IPNode(self.context, new_intent, j, new_locked_attrs)
+        return IPNode(self.ctx, new_intent, j, new_locked_attrs, False)
     
     def get_plus_lower(self, j):
         new_pattern = np.copy(self.intent.pattern)
         new_pattern[j][0] += 1
         new_intent = Intent(new_pattern)
-        return IPNode(self.context, new_intent, j, np.copy(self.locked_attrs))
+        return IPNode(self.ctx, new_intent, j, np.copy(self.locked_attrs), False)
 
     # bnds are inverted to allow for max heap
     def __le__(self, other):
+        if -self.bnd_val == -other.bnd_val:
+            return -self.obj_val <= -other.obj_val
         return -self.bnd_val <= -other.bnd_val
 
     def __eq__(self, other):
         return -self.bnd_val == -other.bnd_val
 
     def __ge__(self, other):
+        if -self.bnd_val == -other.bnd_val:
+            return -self.obj_val >= -other.obj_val
         return -self.bnd_val >= -other.bnd_val
 
     def __lt__(self, other):
+        if -self.bnd_val == -other.bnd_val:
+            return -self.obj_val < -other.obj_val
         return -self.bnd_val < -other.bnd_val
 
     def __gt__(self, other):
+        if -self.bnd_val == -other.bnd_val:
+            return -self.obj_val > -other.obj_val
         return -self.bnd_val > -other.bnd_val
+
+class IPNode2:
+    def __init__(self, ctx, intent, active_attr, locked_attrs, shifted):
+        self.ctx = ctx
+        self.intent = intent
+        self.extension = ctx.extension(intent)
+        self.active_attr = active_attr
+        self.locked_attrs = locked_attrs
+        self.shifted = shifted
+
+    def __repr__(self):
+        repr_str = ""
+        repr_str += "Intent: " + str(self.intent) + "\n"
+        repr_str += "Active_attr: " + str(self.active_attr) + "\n"
+        repr_str += "Obj val: " + str(self.obj_val) + "\n"
+        repr_str += "Bound val: " + str(self.bnd_val) + "\n"
+        return repr_str
+
+    def get_minus_upper(self, j):
+        new_pattern = np.copy(self.intent.pattern)
+        new_pattern[j][1] -= 1
+        new_intent = Intent(new_pattern)
+        new_locked_attrs = np.copy(self.locked_attrs)
+        new_locked_attrs[j] = True
+        return IPNode2(self.ctx, new_intent, j, new_locked_attrs, False)
+    
+    def get_plus_lower(self, j):
+        new_pattern = np.copy(self.intent.pattern)
+        new_pattern[j][0] += 1
+        new_intent = Intent(new_pattern)
+        return IPNode2(self.ctx, new_intent, j, np.copy(self.locked_attrs), False)
+
+    # bnds are inverted to allow for max heap
+    def __le__(self, other):
+        return self.val <= other.val
+
+    def __eq__(self, other):
+        return self.val == other.val
+
+    def __ge__(self, other):
+        return self.val >= other.val
+
+    def __lt__(self, other):
+        return self.val < other.val
+
+    def __gt__(self, other):
+        return self.val > other.val

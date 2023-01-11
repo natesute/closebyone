@@ -6,7 +6,6 @@ from numba.core.types import Array # type: ignore
 import copy # type: ignore
 # from numba import njit
 # from numba.experimental import jitclass
-from search import Extent
 
 class DFS(IPSearch):
 

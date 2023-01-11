@@ -12,16 +12,16 @@ def run_test(i, j, a):
     edges_bin = []
     loops = 2
     for _ in range(loops):
-        target = U.rand_target_col(i,a)
+        labels = U.rand_labels_col(i,a)
         objects_num = U.rand_disc_num_array(i, j)
         objects_bin = U.disc_num_to_bin(objects_num)
 
-        time_num.append(DFS.res_numerical(objects_num, target).time)
-        time_bin.append(DFS.res_binarised(objects_bin, target).time)
-        edges_num.append(DFS.res_numerical(objects_num, target).num_edges)
-        edges_bin.append(DFS.res_binarised(objects_bin, target).num_edges)
-        nodes_num.append(DFS.res_numerical(objects_num, target).num_nodes)
-        nodes_bin.append(DFS.res_binarised(objects_bin, target).num_nodes)
+        time_num.append(DFS.res_numerical(objects_num, labels).time)
+        time_bin.append(DFS.res_binarised(objects_bin, labels).time)
+        edges_num.append(DFS.res_numerical(objects_num, labels).num_edges)
+        edges_bin.append(DFS.res_binarised(objects_bin, labels).num_edges)
+        nodes_num.append(DFS.res_numerical(objects_num, labels).num_nodes)
+        nodes_bin.append(DFS.res_binarised(objects_bin, labels).num_nodes)
         
     time_num_result = float(np.average(np.array(time_num)))
     time_bin_result = float(np.average(np.array(time_bin)))
@@ -85,7 +85,7 @@ def display_plots(ms, ns, alphas, time_num, time_bin, edges_num, edges_bin, node
     if len(alphas) > 1:
         plt.xlim(alphas[0], alphas[-1])
     plt.ylabel('time (s)')
-    plt.xlabel('% positive target')
+    plt.xlabel('% positive labels')
     plt.legend()
 
     # display edges
@@ -124,7 +124,7 @@ def display_plots(ms, ns, alphas, time_num, time_bin, edges_num, edges_bin, node
     if len(alphas) > 1:
         plt.xlim(alphas[0], alphas[-1])
     plt.ylabel('# edges')
-    plt.xlabel('% positive target')
+    plt.xlabel('% positive labels')
     plt.legend()
 
     # display nodes
@@ -163,7 +163,7 @@ def display_plots(ms, ns, alphas, time_num, time_bin, edges_num, edges_bin, node
     if len(alphas) > 1:
         plt.xlim(alphas[0], alphas[-1])
     plt.ylabel('# nodes')
-    plt.xlabel('% positive target')
+    plt.xlabel('% positive labels')
     plt.legend()
 
     plt.show()
@@ -176,18 +176,17 @@ if __name__ == '__main__':
     # display_plots(ms, ns, alphas, time_num, time_bin, edges_num, edges_bin, nodes_num, nodes_bin)
     # display_plots(*get_results(ms, ns, alphas))
     
-    target = U.rand_target_col(10, 0.5, 0)
+    labels = U.rand_labels(10, 0.5, 0)
     objects = U.rand_disc_num_array(10, 4)
-    # target = np.array([1,0])
+    # labels = np.array([1,0])
     # objects = np.array([[1,2], [3,4]])
-    obj = U.impact_obj(target)
-    bnd = U.impact_bnd(target)
-    get_target_mean = U.target_mean(target)
-    context = Context(target, objects, obj, bnd)
+    obj = U.impact_obj(labels)
+    bnd = U.impact_bnd(labels)
+    context = Context(labels, objects, obj, bnd)
     m = len(objects[0])
     n = len(objects)
     root_ext = Extent(np.arange(n), objects)
-    target_mean_root = get_target_mean(root_ext.indices)
+    labels_mean_root = labels[root_ext.indices].mean()
 
     intent = root_ext.get_closure()
 
