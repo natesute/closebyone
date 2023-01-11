@@ -1,2 +1,2 @@
 # closebyone
-Comparison of base learner algorithms for rule boosting. The updated close-by-one algorithm is compared to the existing tail-augmentation algorithm to test expected improvements in complexity.
+Implementation of close-by-one interval-pattern base learner algorithm for rule boosting. The updated interval-pattern algorithm is compared to the existing binary algorithm to test expected improvements in complexity.
