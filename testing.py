@@ -1,8 +1,9 @@
-from iterative_cbo import Search1, Search2, Search3
+from iterative_cbo import Search
 from realkd.legacy import impact, cov_incr_mean_bound, impact_count_mean
-from realkd.search import CoreQueryTreeSearch, Context, Conjunction
+from realkd.search import Context
 from bin_framework import BinTreeSearch
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 from search import Results, NumContext, Utilities as U
 import numpy as np
@@ -37,7 +38,7 @@ def test(n, m, alpha, seed, my_labels=None, my_objects=None):
 
     results_bin.append(res_bin)
     
-    num_search = Search1([], num_ctx, Results(), obj, bnd)
+    num_search = Search([], num_ctx, Results(), obj, bnd)
     num_search.res.time = timeit.timeit(num_search.run, number=1)
     res_num = {
         'n': n,
@@ -73,14 +74,16 @@ def plot_results(bin_df, num_df, independent_var, dependent_var, controlled_vars
     plt.legend()
 
 if __name__ == "__main__":
+    repetitions = 30
     for n in range(2, max_vals["n"]+1, 1):
         for m in range(2, max_vals["m"]+1, 1):
             for alpha in range(1, int(max_vals["alpha"]*10)+1, 2):
                 alpha = alpha/10
                 if n == max_vals["n"] or m == max_vals["m"] or alpha == max_vals["alpha"]: # only tests where a controlled var is at max will be shown
-                    for seed in range(0, 3, 1):
+                    for _ in range(repetitions):
+                        seed = int(datetime.now().timestamp()%1*1000)
                         np.random.seed(seed)
-                        print("n:", n, "m:", m, "alpha:", alpha, "seed:", seed)
+                        # print("n:", n, "m:", m, "alpha:", alpha, "seed:", seed)
                         test(n, m, alpha, seed)
     bin_df = pd.DataFrame.from_dict(results_bin)
     bin_df = bin_df.groupby(['n','m','alpha'], as_index=False).mean()
@@ -89,7 +92,7 @@ if __name__ == "__main__":
     bin_df['num_nodes'] = bin_df['num_nodes'].round(2)
     bin_df['num_candidates'] = bin_df['num_candidates'].round(2)
     bin_df.to_csv('bin_data.txt', sep='\t', index=False)
-    
+
     num_df = pd.DataFrame.from_dict(results_num)
     num_df = num_df.groupby(['n','m','alpha'], as_index=False).mean()
     num_df = num_df.drop(columns = ['seed'])

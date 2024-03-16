@@ -1,13 +1,16 @@
 from heapq import heappop, heappush
 import numpy as np
-from search import IPSearch, Utilities as U, IPNode, Intent
+from search import Utilities as U, IPNode
 import copy
-from bitarray import bitarray
 
 
-class Search1(IPSearch): # best first search
+class Search: # best first search
     def __init__(self, heap, ctx, res, obj, bnd):
-        super().__init__(heap, ctx, res, obj, bnd)
+        self.heap = heap
+        self.ctx = ctx
+        self.res = res
+        self.obj = obj
+        self.bnd = bnd
 
     def push_children(self, curr_node, j):
         # j = curr_node.active_attr

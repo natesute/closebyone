@@ -9,14 +9,6 @@ from collections import defaultdict
 import pandas as pd
 from math import inf
 
-class IPSearch:
-    def __init__(self, heap, ctx, res, obj, bnd):
-        self.heap = heap
-        self.ctx = ctx
-        self.res = res
-        self.obj = obj
-        self.bnd = bnd
-
 
 class PropSearch:
     def __init__(self, curr_node, context, res):
